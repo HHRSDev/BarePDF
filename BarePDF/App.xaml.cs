@@ -10,6 +10,7 @@ public partial class App : Application
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+        ShutdownMode = ShutdownMode.OnExplicitShutdown;
 
         var settings = SettingsStore.Load();
         if (settings.InstanceMode is null)
@@ -30,7 +31,9 @@ public partial class App : Application
         {
             window.OpenPdf(path);
         }
+        MainWindow = window;
         window.Show();
+        ShutdownMode = ShutdownMode.OnLastWindowClose;
     }
 
     private static string? ResolvePdfPath(string[] args)
