@@ -1,6 +1,8 @@
 using System.IO;
 using System.Windows;
 using System.Windows.Input;
+using BarePDF.Settings;
+using BarePDF.Views;
 using Microsoft.Win32;
 
 namespace BarePDF;
@@ -63,7 +65,23 @@ public partial class MainWindow : Window
 
     private void OnSettingsClick(object sender, RoutedEventArgs e)
     {
-        // Wired once settings + first-run mode selection lands.
+        var settings = SettingsStore.Load();
+        var dialog = new InstanceModeDialog(isFirstRun: false, currentMode: settings.InstanceMode)
+        {
+            Owner = this
+        };
+        if (dialog.ShowDialog() != true || dialog.SelectedMode is not { } chosen) return;
+        if (chosen == settings.InstanceMode) return;
+
+        settings.InstanceMode = chosen;
+        SettingsStore.Save(settings);
+
+        MessageBox.Show(
+            this,
+            "Instance mode updated. The change takes effect the next time BarePDF starts.",
+            "BarePDF",
+            MessageBoxButton.OK,
+            MessageBoxImage.Information);
     }
 
     private void OnExitClick(object sender, RoutedEventArgs e) => Close();

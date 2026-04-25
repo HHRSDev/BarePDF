@@ -1,0 +1,44 @@
+using System.Windows;
+using BarePDF.Settings;
+
+namespace BarePDF.Views;
+
+public partial class InstanceModeDialog : Window
+{
+    public InstanceMode? SelectedMode { get; private set; }
+
+    public InstanceModeDialog(bool isFirstRun, InstanceMode? currentMode)
+    {
+        InitializeComponent();
+
+        Heading.Text = isFirstRun ? "Welcome to BarePDF" : "Choose how BarePDF opens PDFs";
+        Title = isFirstRun ? "Welcome to BarePDF" : "BarePDF Settings";
+
+        switch (currentMode)
+        {
+            case InstanceMode.Singleton: SingletonOption.IsChecked = true; break;
+            case InstanceMode.Multiple: MultipleOption.IsChecked = true; break;
+            case InstanceMode.Tabbed: TabbedOption.IsChecked = true; break;
+        }
+
+        UpdateOkEnabled();
+        SingletonOption.Checked += (_, _) => UpdateOkEnabled();
+        MultipleOption.Checked += (_, _) => UpdateOkEnabled();
+        TabbedOption.Checked += (_, _) => UpdateOkEnabled();
+    }
+
+    private void UpdateOkEnabled()
+    {
+        OkButton.IsEnabled = SingletonOption.IsChecked == true
+                          || MultipleOption.IsChecked == true
+                          || TabbedOption.IsChecked == true;
+    }
+
+    private void OnOkClick(object sender, RoutedEventArgs e)
+    {
+        if (SingletonOption.IsChecked == true) SelectedMode = InstanceMode.Singleton;
+        else if (MultipleOption.IsChecked == true) SelectedMode = InstanceMode.Multiple;
+        else if (TabbedOption.IsChecked == true) SelectedMode = InstanceMode.Tabbed;
+        DialogResult = true;
+    }
+}
