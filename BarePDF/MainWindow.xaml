@@ -32,6 +32,34 @@
                        HorizontalAlignment="Center"
                        VerticalAlignment="Center"/>
             <views:PdfViewer x:Name="Viewer" Visibility="Collapsed"/>
+            <TabControl x:Name="TabHost"
+                        Visibility="Collapsed"
+                        BorderThickness="0"
+                        SelectionChanged="OnTabSelectionChanged">
+                <TabControl.Resources>
+                    <Style TargetType="TabItem">
+                        <Setter Property="HeaderTemplate">
+                            <Setter.Value>
+                                <DataTemplate>
+                                    <DockPanel>
+                                        <Button DockPanel.Dock="Right"
+                                                Content="×"
+                                                FontWeight="Bold"
+                                                Padding="4,0"
+                                                Margin="8,0,0,0"
+                                                Background="Transparent"
+                                                BorderThickness="0"
+                                                Cursor="Hand"
+                                                Click="OnCloseTabClick"
+                                                Tag="{Binding RelativeSource={RelativeSource AncestorType=TabItem}}"/>
+                                        <TextBlock Text="{Binding}" VerticalAlignment="Center"/>
+                                    </DockPanel>
+                                </DataTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </TabControl.Resources>
+            </TabControl>
         </Grid>
     </DockPanel>
 

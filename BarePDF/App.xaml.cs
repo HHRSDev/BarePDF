@@ -44,7 +44,7 @@ public partial class App : Application
             }
         }
 
-        var window = new MainWindow();
+        var window = new MainWindow(mode);
         MainWindow = window;
         window.Show();
         if (path is not null)
