@@ -36,7 +36,19 @@ public partial class MainWindow : Window
     public Task OpenPdf(string path)
     {
         if (!File.Exists(path)) return Task.CompletedTask;
-        return _mode == InstanceMode.Tabbed ? AddTab(path) : LoadInSingleViewer(path);
+        return _mode switch
+        {
+            InstanceMode.Tabbed => AddTab(path),
+            InstanceMode.Multiple when Viewer.HasDocument => OpenInNewWindow(path),
+            _ => LoadInSingleViewer(path),
+        };
+    }
+
+    private Task OpenInNewWindow(string path)
+    {
+        var window = new MainWindow(_mode);
+        window.Show();
+        return window.OpenPdf(path);
     }
 
     public void CloseDocument()

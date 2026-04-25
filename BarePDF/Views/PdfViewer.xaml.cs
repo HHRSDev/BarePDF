@@ -16,6 +16,8 @@ public partial class PdfViewer : UserControl
         InitializeComponent();
     }
 
+    public bool HasDocument => _document is not null;
+
     public async Task OpenAsync(string path)
     {
         Close();
