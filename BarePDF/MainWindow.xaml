@@ -4,6 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:BarePDF"
+        xmlns:views="clr-namespace:BarePDF.Views"
         mc:Ignorable="d"
         Title="BarePDF" Height="720" Width="960">
     <DockPanel>
@@ -30,6 +31,7 @@
                        FontSize="16"
                        HorizontalAlignment="Center"
                        VerticalAlignment="Center"/>
+            <views:PdfViewer x:Name="Viewer" Visibility="Collapsed"/>
         </Grid>
     </DockPanel>
 

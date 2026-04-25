@@ -27,12 +27,12 @@ public partial class App : Application
 
         var window = new MainWindow();
         var path = ResolvePdfPath(e.Args);
-        if (path is not null)
-        {
-            window.OpenPdf(path);
-        }
         MainWindow = window;
         window.Show();
+        if (path is not null)
+        {
+            _ = window.OpenPdf(path);
+        }
         ShutdownMode = ShutdownMode.OnLastWindowClose;
     }
 

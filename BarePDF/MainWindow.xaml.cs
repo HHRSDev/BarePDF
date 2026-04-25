@@ -1,6 +1,8 @@
 using System.IO;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using BarePDF.Pdfium;
 using BarePDF.Settings;
 using BarePDF.Views;
 using Microsoft.Win32;
@@ -24,25 +26,40 @@ public partial class MainWindow : Window
         CommandBindings.Add(new CommandBinding(PrintCommand, (_, _) => OnPrintClick(this, new RoutedEventArgs())));
     }
 
-    public void OpenPdf(string path)
+    public async Task OpenPdf(string path)
     {
         if (!File.Exists(path)) return;
 
         _currentPdfPath = path;
         EmptyState.Visibility = Visibility.Collapsed;
+        Viewer.Visibility = Visibility.Visible;
         Title = $"{Path.GetFileName(path)} — BarePDF";
 
-        // TODO: hand `path` to the PDFium-backed viewer once the renderer is wired in.
+        try
+        {
+            await Viewer.OpenAsync(path);
+        }
+        catch (PdfException ex)
+        {
+            CloseDocument();
+            MessageBox.Show(this,
+                $"Could not open this PDF.\n\n{ex.Message}",
+                "BarePDF",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+        }
     }
 
     public void CloseDocument()
     {
+        Viewer.Close();
+        Viewer.Visibility = Visibility.Collapsed;
         _currentPdfPath = null;
         EmptyState.Visibility = Visibility.Visible;
         Title = "BarePDF";
     }
 
-    private void OnOpenClick(object sender, RoutedEventArgs e)
+    private async void OnOpenClick(object sender, RoutedEventArgs e)
     {
         var dialog = new OpenFileDialog
         {
@@ -51,7 +68,7 @@ public partial class MainWindow : Window
         };
         if (dialog.ShowDialog(this) == true)
         {
-            OpenPdf(dialog.FileName);
+            await OpenPdf(dialog.FileName);
         }
     }
 
