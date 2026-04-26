@@ -157,7 +157,18 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
 
     private void OnPrintClick(object sender, RoutedEventArgs e)
     {
-        // Wired once the PDFium renderer can supply pages to PrintDialog.
+        var viewer = GetActiveViewer();
+        if (viewer is null || !viewer.HasDocument) return;
+        viewer.Print(this);
+    }
+
+    private PdfViewer? GetActiveViewer()
+    {
+        if (_mode == InstanceMode.Tabbed)
+        {
+            return TabHost.SelectedItem is TabItem t ? t.Content as PdfViewer : null;
+        }
+        return Viewer;
     }
 
     private void OnSettingsClick(object sender, RoutedEventArgs e)

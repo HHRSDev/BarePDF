@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Controls;
 using BarePDF.Pdfium;
 
@@ -60,6 +61,29 @@ public partial class PdfViewer : UserControl
                 });
             }
         }, token);
+    }
+
+    public void Print(Window owner)
+    {
+        if (_document is null) return;
+
+        var dialog = new System.Windows.Controls.PrintDialog();
+        if (dialog.ShowDialog() != true) return;
+
+        try
+        {
+            var pageSize = new Size(dialog.PrintableAreaWidth, dialog.PrintableAreaHeight);
+            var paginator = new PdfPrintPaginator(_document, pageSize);
+            dialog.PrintDocument(paginator, "BarePDF Document");
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(owner,
+                $"Could not print this PDF.\n\n{ex.Message}",
+                "BarePDF",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+        }
     }
 
     public void Close()
