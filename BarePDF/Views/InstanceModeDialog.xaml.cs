@@ -3,7 +3,7 @@ using BarePDF.Settings;
 
 namespace BarePDF.Views;
 
-public partial class InstanceModeDialog : Window
+public partial class InstanceModeDialog : Wpf.Ui.Controls.FluentWindow
 {
     public InstanceMode? SelectedMode { get; private set; }
 

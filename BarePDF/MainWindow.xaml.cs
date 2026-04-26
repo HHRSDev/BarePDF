@@ -11,7 +11,7 @@ using Microsoft.Win32;
 
 namespace BarePDF;
 
-public partial class MainWindow : Window
+public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
 {
     public static readonly RoutedCommand OpenCommand = new();
     public static readonly RoutedCommand CloseDocumentCommand = new();

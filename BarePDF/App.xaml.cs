@@ -3,6 +3,7 @@ using System.Windows;
 using BarePDF.Instances;
 using BarePDF.Settings;
 using BarePDF.Views;
+using Wpf.Ui.Appearance;
 
 namespace BarePDF;
 
@@ -14,6 +15,7 @@ public partial class App : Application
     {
         base.OnStartup(e);
         ShutdownMode = ShutdownMode.OnExplicitShutdown;
+        ApplicationThemeManager.ApplySystemTheme();
 
         var settings = SettingsStore.Load();
         if (settings.InstanceMode is null)
@@ -44,9 +46,12 @@ public partial class App : Application
             }
         }
 
+        ApplicationThemeManager.ApplySystemTheme();
+
         var window = new MainWindow(mode);
         MainWindow = window;
         window.Show();
+        SystemThemeWatcher.Watch(window);
         if (path is not null)
         {
             _ = window.OpenPdf(path);
