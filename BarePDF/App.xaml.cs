@@ -10,14 +10,16 @@ namespace BarePDF;
 public partial class App : Application
 {
     private InstanceCoordinator? _coordinator;
+    private static Window? _watchedWindow;
 
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
         ShutdownMode = ShutdownMode.OnExplicitShutdown;
-        ApplicationThemeManager.ApplySystemTheme();
 
         var settings = SettingsStore.Load();
+        ApplyThemeWithoutWatcher(settings.Theme ?? AppTheme.System);
+
         if (settings.InstanceMode is null)
         {
             var dialog = new InstanceModeDialog(isFirstRun: true, currentMode: null);
@@ -46,12 +48,16 @@ public partial class App : Application
             }
         }
 
-        ApplicationThemeManager.ApplySystemTheme();
-
         var window = new MainWindow(mode);
         MainWindow = window;
         window.Show();
-        SystemThemeWatcher.Watch(window);
+
+        if ((settings.Theme ?? AppTheme.System) == AppTheme.System)
+        {
+            SystemThemeWatcher.Watch(window);
+            _watchedWindow = window;
+        }
+
         if (path is not null)
         {
             _ = window.OpenPdf(path);
@@ -76,6 +82,42 @@ public partial class App : Application
         }
 
         ShutdownMode = ShutdownMode.OnLastWindowClose;
+    }
+
+    internal static void ApplyTheme(AppTheme mode, Window window)
+    {
+        if (mode == AppTheme.System)
+        {
+            ApplicationThemeManager.ApplySystemTheme();
+            if (_watchedWindow is null)
+            {
+                SystemThemeWatcher.Watch(window);
+                _watchedWindow = window;
+            }
+        }
+        else
+        {
+            if (_watchedWindow is not null)
+            {
+                SystemThemeWatcher.UnWatch(_watchedWindow);
+                _watchedWindow = null;
+            }
+            ApplicationThemeManager.Apply(
+                mode == AppTheme.Light ? ApplicationTheme.Light : ApplicationTheme.Dark);
+        }
+    }
+
+    private static void ApplyThemeWithoutWatcher(AppTheme mode)
+    {
+        if (mode == AppTheme.System)
+        {
+            ApplicationThemeManager.ApplySystemTheme();
+        }
+        else
+        {
+            ApplicationThemeManager.Apply(
+                mode == AppTheme.Light ? ApplicationTheme.Light : ApplicationTheme.Dark);
+        }
     }
 
     protected override void OnExit(ExitEventArgs e)

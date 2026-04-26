@@ -53,6 +53,17 @@
                 </StackPanel>
             </RadioButton>
 
+            <StackPanel x:Name="AppearanceSection" Margin="0,4,0,20">
+                <TextBlock Text="Appearance" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                <ComboBox x:Name="ThemeCombo"
+                          Width="260"
+                          HorizontalAlignment="Left">
+                    <ComboBoxItem Tag="System">Follow Windows</ComboBoxItem>
+                    <ComboBoxItem Tag="Light">Light</ComboBoxItem>
+                    <ComboBoxItem Tag="Dark">Dark</ComboBoxItem>
+                </ComboBox>
+            </StackPanel>
+
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                 <ui:Button x:Name="OkButton" Content="OK" Width="88" Margin="0,0,8,0"
                            Appearance="Primary"

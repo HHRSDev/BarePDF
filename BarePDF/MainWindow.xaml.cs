@@ -163,22 +163,37 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
     private void OnSettingsClick(object sender, RoutedEventArgs e)
     {
         var settings = SettingsStore.Load();
-        var dialog = new InstanceModeDialog(isFirstRun: false, currentMode: settings.InstanceMode)
+        var dialog = new InstanceModeDialog(
+            isFirstRun: false,
+            currentMode: settings.InstanceMode,
+            currentTheme: settings.Theme)
         {
             Owner = this
         };
-        if (dialog.ShowDialog() != true || dialog.SelectedMode is not { } chosen) return;
-        if (chosen == settings.InstanceMode) return;
+        if (dialog.ShowDialog() != true || dialog.SelectedMode is not { } chosenMode) return;
 
-        settings.InstanceMode = chosen;
+        var modeChanged = chosenMode != settings.InstanceMode;
+        var themeChanged = dialog.SelectedTheme != (settings.Theme ?? AppTheme.System);
+        if (!modeChanged && !themeChanged) return;
+
+        settings.InstanceMode = chosenMode;
+        settings.Theme = dialog.SelectedTheme;
         SettingsStore.Save(settings);
 
-        MessageBox.Show(
-            this,
-            "Instance mode updated. The change takes effect the next time BarePDF starts.",
-            "BarePDF",
-            MessageBoxButton.OK,
-            MessageBoxImage.Information);
+        if (themeChanged)
+        {
+            App.ApplyTheme(dialog.SelectedTheme, this);
+        }
+
+        if (modeChanged)
+        {
+            MessageBox.Show(
+                this,
+                "Instance mode updated. The change takes effect the next time BarePDF starts.",
+                "BarePDF",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+        }
     }
 
     private void OnExitClick(object sender, RoutedEventArgs e) => Close();

@@ -7,7 +7,14 @@ public partial class InstanceModeDialog : Wpf.Ui.Controls.FluentWindow
 {
     public InstanceMode? SelectedMode { get; private set; }
 
-    public InstanceModeDialog(bool isFirstRun, InstanceMode? currentMode)
+    public AppTheme SelectedTheme => ThemeCombo.SelectedIndex switch
+    {
+        1 => AppTheme.Light,
+        2 => AppTheme.Dark,
+        _ => AppTheme.System,
+    };
+
+    public InstanceModeDialog(bool isFirstRun, InstanceMode? currentMode, AppTheme? currentTheme = null)
     {
         InitializeComponent();
 
@@ -20,6 +27,14 @@ public partial class InstanceModeDialog : Wpf.Ui.Controls.FluentWindow
             case InstanceMode.Multiple: MultipleOption.IsChecked = true; break;
             case InstanceMode.Tabbed: TabbedOption.IsChecked = true; break;
         }
+
+        AppearanceSection.Visibility = isFirstRun ? Visibility.Collapsed : Visibility.Visible;
+        ThemeCombo.SelectedIndex = (currentTheme ?? AppTheme.System) switch
+        {
+            AppTheme.Light => 1,
+            AppTheme.Dark => 2,
+            _ => 0,
+        };
 
         UpdateOkEnabled();
         SingletonOption.Checked += (_, _) => UpdateOkEnabled();
