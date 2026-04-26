@@ -3,6 +3,7 @@
                  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                  xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
                  Title="BarePDF"
+                 Icon="/Resources/BarePDF.ico"
                  Width="520" SizeToContent="Height"
                  WindowStartupLocation="CenterOwner"
                  ResizeMode="NoResize"
@@ -11,7 +12,11 @@
                  ExtendsContentIntoTitleBar="True"
                  WindowCornerPreference="Round">
     <DockPanel>
-        <ui:TitleBar DockPanel.Dock="Top" Title="BarePDF"/>
+        <ui:TitleBar DockPanel.Dock="Top" Title="BarePDF">
+            <ui:TitleBar.Icon>
+                <ui:ImageIcon Source="/Resources/BarePDF.ico"/>
+            </ui:TitleBar.Icon>
+        </ui:TitleBar>
         <StackPanel Margin="24,8,24,24">
             <TextBlock x:Name="Heading"
                        FontSize="18" FontWeight="SemiBold"

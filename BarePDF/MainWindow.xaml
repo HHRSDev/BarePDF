@@ -8,11 +8,16 @@
                  xmlns:views="clr-namespace:BarePDF.Views"
                  mc:Ignorable="d"
                  Title="BarePDF" Height="720" Width="960"
+                 Icon="/Resources/BarePDF.ico"
                  WindowBackdropType="Mica"
                  ExtendsContentIntoTitleBar="True"
                  WindowCornerPreference="Round">
     <DockPanel>
-        <ui:TitleBar DockPanel.Dock="Top" Title="BarePDF"/>
+        <ui:TitleBar DockPanel.Dock="Top" Title="BarePDF">
+            <ui:TitleBar.Icon>
+                <ui:ImageIcon Source="/Resources/BarePDF.ico"/>
+            </ui:TitleBar.Icon>
+        </ui:TitleBar>
         <Menu DockPanel.Dock="Top" Background="Transparent">
             <MenuItem Header="_File">
                 <MenuItem Header="_Open..." InputGestureText="Ctrl+O" Click="OnOpenClick"/>
