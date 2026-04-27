@@ -225,11 +225,16 @@ public partial class PdfViewer : UserControl
                 var bitmap = page.Render(dpi);
                 Dispatcher.InvokeAsync(() =>
                 {
-                    if (!token.IsCancellationRequested && Math.Abs(item.Scale - capturedScale) < 0.001)
+                    _renderingPages.Remove(index);
+                    if (token.IsCancellationRequested) return;
+                    if (Math.Abs(item.Scale - capturedScale) < 0.001)
                     {
                         item.Image = bitmap;
                     }
-                    _renderingPages.Remove(index);
+                    else
+                    {
+                        EnsureRendered(item);
+                    }
                 });
             }
             catch
