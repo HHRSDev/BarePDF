@@ -5,22 +5,23 @@ using BarePDF.Pdfium;
 
 namespace BarePDF.Views;
 
-internal sealed class PdfPrintPaginator : DocumentPaginator
+internal sealed class PdfPrintPaginator : DocumentPaginator, IDocumentPaginatorSource
 {
-    private const double PrintDpi = 300.0;
-
     private readonly PdfDocument _document;
+    private readonly double _renderDpi;
     private Size _pageSize;
 
-    public PdfPrintPaginator(PdfDocument document, Size pageSize)
+    public PdfPrintPaginator(PdfDocument document, Size pageSize, double renderDpi = 300.0)
     {
         _document = document;
         _pageSize = pageSize;
+        _renderDpi = renderDpi;
     }
 
     public override bool IsPageCountValid => true;
     public override int PageCount => _document.PageCount;
-    public override IDocumentPaginatorSource? Source => null;
+    public override IDocumentPaginatorSource Source => this;
+    DocumentPaginator IDocumentPaginatorSource.DocumentPaginator => this;
 
     public override Size PageSize
     {
@@ -40,7 +41,7 @@ internal sealed class PdfPrintPaginator : DocumentPaginator
         var x = (_pageSize.Width - renderedWidth) / 2.0;
         var y = (_pageSize.Height - renderedHeight) / 2.0;
 
-        var bitmap = page.Render(PrintDpi);
+        var bitmap = page.Render(_renderDpi);
 
         var visual = new DrawingVisual();
         using (var dc = visual.RenderOpen())

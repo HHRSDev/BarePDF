@@ -24,6 +24,7 @@
                 <MenuItem Header="_Close" InputGestureText="Ctrl+W" Click="OnCloseDocumentClick"/>
                 <Separator/>
                 <MenuItem Header="_Print..." InputGestureText="Ctrl+P" Click="OnPrintClick"/>
+                <MenuItem Header="Print Pre_view..." Click="OnPrintPreviewClick"/>
                 <Separator/>
                 <MenuItem Header="_Settings..." Click="OnSettingsClick"/>
                 <Separator/>

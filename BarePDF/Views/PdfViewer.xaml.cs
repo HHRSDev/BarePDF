@@ -63,6 +63,13 @@ public partial class PdfViewer : UserControl
         }, token);
     }
 
+    public void ShowPrintPreview(Window owner)
+    {
+        if (_document is null) return;
+        var preview = new PrintPreviewWindow(_document, owner);
+        preview.ShowDialog();
+    }
+
     public void Print(Window owner)
     {
         if (_document is null) return;

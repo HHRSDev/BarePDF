@@ -162,6 +162,13 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
         viewer.Print(this);
     }
 
+    private void OnPrintPreviewClick(object sender, RoutedEventArgs e)
+    {
+        var viewer = GetActiveViewer();
+        if (viewer is null || !viewer.HasDocument) return;
+        viewer.ShowPrintPreview(this);
+    }
+
     private PdfViewer? GetActiveViewer()
     {
         if (_mode == InstanceMode.Tabbed)

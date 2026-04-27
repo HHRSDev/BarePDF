@@ -1,0 +1,39 @@
+<ui:FluentWindow x:Class="BarePDF.Views.PrintPreviewWindow"
+                 xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                 xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+                 Title="Print Preview"
+                 Icon="/Resources/BarePDF.ico"
+                 Width="900" Height="720"
+                 WindowStartupLocation="CenterOwner"
+                 WindowBackdropType="Mica"
+                 ExtendsContentIntoTitleBar="True"
+                 WindowCornerPreference="Round">
+    <DockPanel>
+        <ui:TitleBar DockPanel.Dock="Top" Title="Print Preview">
+            <ui:TitleBar.Icon>
+                <ui:ImageIcon Source="/Resources/BarePDF.ico"/>
+            </ui:TitleBar.Icon>
+        </ui:TitleBar>
+
+        <Border DockPanel.Dock="Bottom"
+                BorderThickness="0,1,0,0"
+                BorderBrush="{DynamicResource ControlElevationBorderBrush}"
+                Padding="16,12">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <ui:Button Content="Print..." Width="96" Margin="0,0,8,0"
+                           Appearance="Primary" IsDefault="True"
+                           Click="OnPrintClick"/>
+                <ui:Button Content="Close" Width="96" IsCancel="True" Click="OnCloseClick"/>
+            </StackPanel>
+        </Border>
+
+        <DocumentViewer x:Name="DocViewer">
+            <DocumentViewer.Resources>
+                <Style TargetType="ToolBar">
+                    <Setter Property="Visibility" Value="Collapsed"/>
+                </Style>
+            </DocumentViewer.Resources>
+        </DocumentViewer>
+    </DockPanel>
+</ui:FluentWindow>
