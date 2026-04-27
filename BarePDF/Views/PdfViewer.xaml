@@ -42,6 +42,7 @@
                         BorderBrush="#222"
                         BorderThickness="1"
                         SnapsToDevicePixels="True"
+                        Cursor="IBeam"
                         Width="{Binding DisplayWidth}"
                         Height="{Binding DisplayHeight}"
                         DataContextChanged="OnPageContainerDataContextChanged"

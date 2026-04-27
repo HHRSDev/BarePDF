@@ -41,6 +41,9 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
         CommandBindings.Add(new CommandBinding(ActualSizeCommand, (_, _) => SetActiveZoomMode(ZoomMode.ActualSize)));
         CommandBindings.Add(new CommandBinding(ZoomInCommand, (_, _) => GetActiveViewer()?.ZoomIn()));
         CommandBindings.Add(new CommandBinding(ZoomOutCommand, (_, _) => GetActiveViewer()?.ZoomOut()));
+        CommandBindings.Add(new CommandBinding(ApplicationCommands.Copy,
+            (_, _) => GetActiveViewer()?.CopySelectedText(),
+            (_, e) => e.CanExecute = GetActiveViewer()?.HasSelection ?? false));
 
         Closed += OnWindowClosed;
     }

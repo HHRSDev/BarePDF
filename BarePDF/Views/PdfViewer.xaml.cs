@@ -44,6 +44,41 @@ public partial class PdfViewer : UserControl
             ? items[0].DisplayWidth
             : 0;
 
+    public bool HasSelection
+    {
+        get
+        {
+            if (PageList.ItemsSource is not IEnumerable<PdfPageItem> items) return false;
+            foreach (var item in items)
+            {
+                if (item.SelectionStart >= 0 && item.SelectionEnd >= item.SelectionStart) return true;
+            }
+            return false;
+        }
+    }
+
+    public string GetSelectedText()
+    {
+        if (PageList.ItemsSource is not IEnumerable<PdfPageItem> items) return string.Empty;
+        foreach (var item in items)
+        {
+            if (item.SelectionStart < 0 || item.SelectionEnd < item.SelectionStart) continue;
+            var textPage = GetOrLoadTextPage(item.PageNumber - 1);
+            if (textPage is null) continue;
+            return textPage.ExtractText(item.SelectionStart, item.SelectionEnd - item.SelectionStart + 1);
+        }
+        return string.Empty;
+    }
+
+    public void CopySelectedText()
+    {
+        var text = GetSelectedText();
+        if (!string.IsNullOrEmpty(text))
+        {
+            Clipboard.SetText(text);
+        }
+    }
+
     public async Task OpenAsync(string path)
     {
         Close();
