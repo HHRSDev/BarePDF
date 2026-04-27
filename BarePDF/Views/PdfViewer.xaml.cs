@@ -50,15 +50,22 @@ public partial class PdfViewer : UserControl
         });
 
         _renderCts = new CancellationTokenSource();
+
+        if (sizes.Length > 0)
+        {
+            var firstWidth = sizes[0].w * 96.0 / 72.0;
+            var firstHeight = sizes[0].h * 96.0 / 72.0;
+            _zoomScale = ComputeFitScaleForSize(_zoomMode, firstWidth, firstHeight);
+        }
+
         var items = new ObservableCollection<PdfPageItem>();
         for (int i = 0; i < sizes.Length; i++)
         {
-            items.Add(new PdfPageItem(pageNumber: i + 1, sizes[i].w, sizes[i].h));
+            var item = new PdfPageItem(pageNumber: i + 1, sizes[i].w, sizes[i].h);
+            item.Scale = _zoomScale;
+            items.Add(item);
         }
         PageList.ItemsSource = items;
-
-        _zoomScale = ComputeFitScale(_zoomMode);
-        ApplyScaleToItems();
     }
 
     public void SetZoomMode(ZoomMode mode)
@@ -122,10 +129,12 @@ public partial class PdfViewer : UserControl
         {
             return 1.0;
         }
-
         var first = items[0];
-        var pageWidth = first.WidthPoints * 96.0 / 72.0;
-        var pageHeight = first.HeightPoints * 96.0 / 72.0;
+        return ComputeFitScaleForSize(mode, first.WidthPoints * 96.0 / 72.0, first.HeightPoints * 96.0 / 72.0);
+    }
+
+    private double ComputeFitScaleForSize(ZoomMode mode, double pageWidthLogical, double pageHeightLogical)
+    {
         var viewportWidth = Math.Max(0, PageList.ActualWidth - 60);
         var viewportHeight = Math.Max(0, PageList.ActualHeight - 40);
 
@@ -136,9 +145,9 @@ public partial class PdfViewer : UserControl
 
         return mode switch
         {
-            ZoomMode.FitPage => Math.Min(viewportWidth / pageWidth, viewportHeight / pageHeight),
-            ZoomMode.FitPageHeight => viewportHeight / pageHeight,
-            ZoomMode.FitWidth => viewportWidth / pageWidth,
+            ZoomMode.FitPage => Math.Min(viewportWidth / pageWidthLogical, viewportHeight / pageHeightLogical),
+            ZoomMode.FitPageHeight => viewportHeight / pageHeightLogical,
+            ZoomMode.FitWidth => viewportWidth / pageWidthLogical,
             ZoomMode.ActualSize => 1.0,
             _ => _zoomScale,
         };
