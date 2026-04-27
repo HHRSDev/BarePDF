@@ -10,16 +10,26 @@ namespace BarePDF.Views;
 
 public partial class PdfViewer : UserControl
 {
+    private const double ZoomStep = 1.25;
+    private const double MinScale = 0.1;
+    private const double MaxScale = 8.0;
+
     private PdfDocument? _document;
     private CancellationTokenSource? _renderCts;
     private readonly HashSet<int> _renderingPages = new();
 
+    private ZoomMode _zoomMode = ZoomMode.FitPageHeight;
+    private double _zoomScale = 1.0;
+
     public PdfViewer()
     {
         InitializeComponent();
+        SizeChanged += OnViewerSizeChanged;
     }
 
     public bool HasDocument => _document is not null;
+    public ZoomMode ZoomMode => _zoomMode;
+    public double ZoomScale => _zoomScale;
 
     public async Task OpenAsync(string path)
     {
@@ -46,6 +56,99 @@ public partial class PdfViewer : UserControl
             items.Add(new PdfPageItem(pageNumber: i + 1, sizes[i].w, sizes[i].h));
         }
         PageList.ItemsSource = items;
+
+        _zoomScale = ComputeFitScale(_zoomMode);
+        ApplyScaleToItems();
+    }
+
+    public void SetZoomMode(ZoomMode mode)
+    {
+        _zoomMode = mode;
+        var newScale = mode == ZoomMode.Custom
+            ? Math.Clamp(_zoomScale, MinScale, MaxScale)
+            : ComputeFitScale(mode);
+        ChangeScale(newScale);
+    }
+
+    public void ZoomIn() => ZoomBy(ZoomStep);
+    public void ZoomOut() => ZoomBy(1.0 / ZoomStep);
+
+    private void ZoomBy(double factor)
+    {
+        var newScale = Math.Clamp(_zoomScale * factor, MinScale, MaxScale);
+        _zoomMode = ZoomMode.Custom;
+        ChangeScale(newScale);
+    }
+
+    private void ChangeScale(double newScale)
+    {
+        if (Math.Abs(newScale - _zoomScale) < 0.0001 &&
+            _zoomMode != ZoomMode.Custom)
+        {
+            return;
+        }
+
+        _zoomScale = newScale;
+        ApplyScaleToItems();
+    }
+
+    private void ApplyScaleToItems()
+    {
+        if (PageList.ItemsSource is not IEnumerable<PdfPageItem> items) return;
+        foreach (var item in items)
+        {
+            item.Scale = _zoomScale;
+            item.Image = null;
+        }
+        RerenderRealizedItems();
+    }
+
+    private void RerenderRealizedItems()
+    {
+        var generator = PageList.ItemContainerGenerator;
+        for (int i = 0; i < PageList.Items.Count; i++)
+        {
+            if (generator.ContainerFromIndex(i) is ListBoxItem &&
+                PageList.Items[i] is PdfPageItem item)
+            {
+                EnsureRendered(item);
+            }
+        }
+    }
+
+    private double ComputeFitScale(ZoomMode mode)
+    {
+        if (PageList.ItemsSource is not IList<PdfPageItem> items || items.Count == 0)
+        {
+            return 1.0;
+        }
+
+        var first = items[0];
+        var pageWidth = first.WidthPoints * 96.0 / 72.0;
+        var pageHeight = first.HeightPoints * 96.0 / 72.0;
+        var viewportWidth = Math.Max(0, PageList.ActualWidth - 60);
+        var viewportHeight = Math.Max(0, PageList.ActualHeight - 40);
+
+        if (viewportWidth <= 0 || viewportHeight <= 0)
+        {
+            return 1.0;
+        }
+
+        return mode switch
+        {
+            ZoomMode.FitPage => Math.Min(viewportWidth / pageWidth, viewportHeight / pageHeight),
+            ZoomMode.FitPageHeight => viewportHeight / pageHeight,
+            ZoomMode.FitWidth => viewportWidth / pageWidth,
+            ZoomMode.ActualSize => 1.0,
+            _ => _zoomScale,
+        };
+    }
+
+    private void OnViewerSizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        if (_zoomMode == ZoomMode.Custom || _document is null) return;
+        var newScale = ComputeFitScale(_zoomMode);
+        ChangeScale(newScale);
     }
 
     public void ShowPrintPreview(Window owner)
@@ -91,7 +194,7 @@ public partial class PdfViewer : UserControl
         _document = null;
     }
 
-    private void OnPageContainerLoaded(object sender, RoutedEventArgs e)
+    private void OnPageContainerDataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
     {
         if (sender is FrameworkElement fe && fe.DataContext is PdfPageItem item)
         {
@@ -109,6 +212,8 @@ public partial class PdfViewer : UserControl
 
         var doc = _document;
         var token = _renderCts?.Token ?? CancellationToken.None;
+        var dpi = 96.0 * _zoomScale;
+        var capturedScale = _zoomScale;
 
         _ = Task.Run(() =>
         {
@@ -117,10 +222,10 @@ public partial class PdfViewer : UserControl
                 if (token.IsCancellationRequested) return;
                 using var page = doc.GetPage(index);
                 if (token.IsCancellationRequested) return;
-                var bitmap = page.Render(96.0);
+                var bitmap = page.Render(dpi);
                 Dispatcher.InvokeAsync(() =>
                 {
-                    if (!token.IsCancellationRequested)
+                    if (!token.IsCancellationRequested && Math.Abs(item.Scale - capturedScale) < 0.001)
                     {
                         item.Image = bitmap;
                     }

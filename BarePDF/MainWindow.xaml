@@ -30,6 +30,15 @@
                 <Separator/>
                 <MenuItem Header="E_xit" Click="OnExitClick"/>
             </MenuItem>
+            <MenuItem Header="_View">
+                <MenuItem Header="Fit _Page" InputGestureText="Ctrl+0" Click="OnFitPageClick"/>
+                <MenuItem Header="Fit Page _Height" InputGestureText="Ctrl+1" Click="OnFitPageHeightClick"/>
+                <MenuItem Header="Fit _Width" InputGestureText="Ctrl+2" Click="OnFitWidthClick"/>
+                <MenuItem Header="_Actual Size" InputGestureText="Ctrl+3" Click="OnActualSizeClick"/>
+                <Separator/>
+                <MenuItem Header="Zoom _In" InputGestureText="Ctrl+=" Click="OnZoomInClick"/>
+                <MenuItem Header="Zoom _Out" InputGestureText="Ctrl+-" Click="OnZoomOutClick"/>
+            </MenuItem>
             <MenuItem Header="_Help">
                 <MenuItem Header="_About BarePDF" Click="OnAboutClick"/>
             </MenuItem>
@@ -79,5 +88,11 @@
         <KeyBinding Key="O" Modifiers="Control" Command="{x:Static local:MainWindow.OpenCommand}"/>
         <KeyBinding Key="W" Modifiers="Control" Command="{x:Static local:MainWindow.CloseDocumentCommand}"/>
         <KeyBinding Key="P" Modifiers="Control" Command="{x:Static local:MainWindow.PrintCommand}"/>
+        <KeyBinding Key="D0" Modifiers="Control" Command="{x:Static local:MainWindow.FitPageCommand}"/>
+        <KeyBinding Key="D1" Modifiers="Control" Command="{x:Static local:MainWindow.FitPageHeightCommand}"/>
+        <KeyBinding Key="D2" Modifiers="Control" Command="{x:Static local:MainWindow.FitWidthCommand}"/>
+        <KeyBinding Key="D3" Modifiers="Control" Command="{x:Static local:MainWindow.ActualSizeCommand}"/>
+        <KeyBinding Key="OemPlus" Modifiers="Control" Command="{x:Static local:MainWindow.ZoomInCommand}"/>
+        <KeyBinding Key="OemMinus" Modifiers="Control" Command="{x:Static local:MainWindow.ZoomOutCommand}"/>
     </ui:FluentWindow.InputBindings>
 </ui:FluentWindow>

@@ -16,6 +16,12 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
     public static readonly RoutedCommand OpenCommand = new();
     public static readonly RoutedCommand CloseDocumentCommand = new();
     public static readonly RoutedCommand PrintCommand = new();
+    public static readonly RoutedCommand FitPageCommand = new();
+    public static readonly RoutedCommand FitPageHeightCommand = new();
+    public static readonly RoutedCommand FitWidthCommand = new();
+    public static readonly RoutedCommand ActualSizeCommand = new();
+    public static readonly RoutedCommand ZoomInCommand = new();
+    public static readonly RoutedCommand ZoomOutCommand = new();
 
     private readonly InstanceMode _mode;
 
@@ -29,6 +35,12 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
         CommandBindings.Add(new CommandBinding(OpenCommand, (_, _) => OnOpenClick(this, new RoutedEventArgs())));
         CommandBindings.Add(new CommandBinding(CloseDocumentCommand, (_, _) => OnCloseDocumentClick(this, new RoutedEventArgs())));
         CommandBindings.Add(new CommandBinding(PrintCommand, (_, _) => OnPrintClick(this, new RoutedEventArgs())));
+        CommandBindings.Add(new CommandBinding(FitPageCommand, (_, _) => SetActiveZoomMode(ZoomMode.FitPage)));
+        CommandBindings.Add(new CommandBinding(FitPageHeightCommand, (_, _) => SetActiveZoomMode(ZoomMode.FitPageHeight)));
+        CommandBindings.Add(new CommandBinding(FitWidthCommand, (_, _) => SetActiveZoomMode(ZoomMode.FitWidth)));
+        CommandBindings.Add(new CommandBinding(ActualSizeCommand, (_, _) => SetActiveZoomMode(ZoomMode.ActualSize)));
+        CommandBindings.Add(new CommandBinding(ZoomInCommand, (_, _) => GetActiveViewer()?.ZoomIn()));
+        CommandBindings.Add(new CommandBinding(ZoomOutCommand, (_, _) => GetActiveViewer()?.ZoomOut()));
 
         Closed += OnWindowClosed;
     }
@@ -167,6 +179,20 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
         var viewer = GetActiveViewer();
         if (viewer is null || !viewer.HasDocument) return;
         viewer.ShowPrintPreview(this);
+    }
+
+    private void OnFitPageClick(object sender, RoutedEventArgs e) => SetActiveZoomMode(ZoomMode.FitPage);
+    private void OnFitPageHeightClick(object sender, RoutedEventArgs e) => SetActiveZoomMode(ZoomMode.FitPageHeight);
+    private void OnFitWidthClick(object sender, RoutedEventArgs e) => SetActiveZoomMode(ZoomMode.FitWidth);
+    private void OnActualSizeClick(object sender, RoutedEventArgs e) => SetActiveZoomMode(ZoomMode.ActualSize);
+    private void OnZoomInClick(object sender, RoutedEventArgs e) => GetActiveViewer()?.ZoomIn();
+    private void OnZoomOutClick(object sender, RoutedEventArgs e) => GetActiveViewer()?.ZoomOut();
+
+    private void SetActiveZoomMode(ZoomMode mode)
+    {
+        var viewer = GetActiveViewer();
+        if (viewer is null || !viewer.HasDocument) return;
+        viewer.SetZoomMode(mode);
     }
 
     private PdfViewer? GetActiveViewer()

@@ -43,7 +43,7 @@
                         SnapsToDevicePixels="True"
                         Width="{Binding DisplayWidth}"
                         Height="{Binding DisplayHeight}"
-                        Loaded="OnPageContainerLoaded">
+                        DataContextChanged="OnPageContainerDataContextChanged">
                     <Image Source="{Binding Image}" Stretch="Uniform"/>
                 </Border>
             </DataTemplate>
