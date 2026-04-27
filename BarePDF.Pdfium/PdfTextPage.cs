@@ -64,6 +64,40 @@ public sealed class PdfTextPage : IDisposable
         }
     }
 
+    public IReadOnlyList<TextMatch> FindAll(string query, bool caseSensitive = false, bool wholeWord = false)
+    {
+        if (_handle is null) throw new ObjectDisposedException(nameof(PdfTextPage));
+        if (string.IsNullOrEmpty(query) || CharCount == 0) return Array.Empty<TextMatch>();
+
+        var buffer = new ushort[query.Length + 1];
+        for (int i = 0; i < query.Length; i++) buffer[i] = query[i];
+
+        ulong flags = 0;
+        if (caseSensitive) flags |= 1UL;
+        if (wholeWord) flags |= 2UL;
+
+        var matches = new List<TextMatch>();
+        lock (PdfNative.SyncRoot)
+        {
+            var handle = fpdf_text.FPDFTextFindStart(_handle, ref buffer[0], flags, 0);
+            if (handle is null) return Array.Empty<TextMatch>();
+            try
+            {
+                while (fpdf_text.FPDFTextFindNext(handle) != 0)
+                {
+                    var idx = fpdf_text.FPDFTextGetSchResultIndex(handle);
+                    var cnt = fpdf_text.FPDFTextGetSchCount(handle);
+                    if (cnt > 0) matches.Add(new TextMatch(idx, cnt));
+                }
+            }
+            finally
+            {
+                fpdf_text.FPDFTextFindClose(handle);
+            }
+        }
+        return matches;
+    }
+
     public int GetCharIndexAtPoint(double pdfX, double pdfY, double xTolerance = 5.0, double yTolerance = 5.0)
     {
         if (_handle is null) throw new ObjectDisposedException(nameof(PdfTextPage));
