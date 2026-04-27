@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using BarePDF.Pdfium;
 using BarePDF.Settings;
 
@@ -18,6 +19,12 @@ public partial class PdfViewer : UserControl
     private PdfDocument? _document;
     private CancellationTokenSource? _renderCts;
     private readonly HashSet<int> _renderingPages = new();
+    private readonly Dictionary<int, PdfTextPage> _textPageCache = new();
+
+    private PdfPageItem? _selectionPage;
+    private PdfTextPage? _selectionTextPage;
+    private int _selectionAnchor = -1;
+    private bool _isSelecting;
 
     private ZoomMode _zoomMode = ZoomMode.FitPageHeight;
     private double _zoomScale = 1.0;
@@ -227,10 +234,135 @@ public partial class PdfViewer : UserControl
         _renderCts = null;
         _renderingPages.Clear();
 
+        _isSelecting = false;
+        _selectionPage = null;
+        _selectionTextPage = null;
+        _selectionAnchor = -1;
+
+        foreach (var tp in _textPageCache.Values) tp.Dispose();
+        _textPageCache.Clear();
+
         PageList.ItemsSource = null;
 
         _document?.Dispose();
         _document = null;
+    }
+
+    private PdfTextPage? GetOrLoadTextPage(int pageIndex)
+    {
+        if (_document is null) return null;
+        if (_textPageCache.TryGetValue(pageIndex, out var cached)) return cached;
+        try
+        {
+            using var page = _document.GetPage(pageIndex);
+            var textPage = page.LoadTextPage();
+            _textPageCache[pageIndex] = textPage;
+            return textPage;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static (double pdfX, double pdfY) ToPdfCoords(PdfPageItem item, Point wpf)
+    {
+        if (item.DisplayWidth <= 0 || item.DisplayHeight <= 0) return (0, 0);
+        var pdfX = wpf.X * item.WidthPoints / item.DisplayWidth;
+        var pdfY = item.HeightPoints - wpf.Y * item.HeightPoints / item.DisplayHeight;
+        return (pdfX, pdfY);
+    }
+
+    private static Rect PdfBoxToWpfRect(PdfPageItem item, PdfRect box)
+    {
+        var sx = item.DisplayWidth / item.WidthPoints;
+        var sy = item.DisplayHeight / item.HeightPoints;
+        var x = box.Left * sx;
+        var w = (box.Right - box.Left) * sx;
+        var y = (item.HeightPoints - box.Top) * sy;
+        var h = (box.Top - box.Bottom) * sy;
+        if (w < 0) { x += w; w = -w; }
+        if (h < 0) { y += h; h = -h; }
+        return new Rect(x, y, w, h);
+    }
+
+    private void UpdateSelection(PdfPageItem item, PdfTextPage textPage, int anchor, int caret)
+    {
+        var (start, end) = anchor < caret ? (anchor, caret) : (caret, anchor);
+        item.SelectionStart = start;
+        item.SelectionEnd = end;
+
+        var rects = new List<Rect>(end - start + 1);
+        for (int i = start; i <= end && i < textPage.CharCount; i++)
+        {
+            try
+            {
+                var box = textPage.GetCharBox(i);
+                rects.Add(PdfBoxToWpfRect(item, box));
+            }
+            catch { /* skip glyphs we can't measure */ }
+        }
+        item.SelectedRects = rects;
+    }
+
+    private void ClearAllSelections()
+    {
+        if (PageList.ItemsSource is not IEnumerable<PdfPageItem> items) return;
+        foreach (var i in items)
+        {
+            if (i.SelectedRects is null) continue;
+            i.SelectedRects = null;
+            i.SelectionStart = -1;
+            i.SelectionEnd = -1;
+        }
+    }
+
+    private void OnPageMouseDown(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is not FrameworkElement fe || fe.DataContext is not PdfPageItem item) return;
+        if (_document is null) return;
+
+        var textPage = GetOrLoadTextPage(item.PageNumber - 1);
+        if (textPage is null) return;
+
+        var pos = e.GetPosition(fe);
+        var (pdfX, pdfY) = ToPdfCoords(item, pos);
+        var index = textPage.GetCharIndexAtPoint(pdfX, pdfY);
+
+        ClearAllSelections();
+        if (index < 0)
+        {
+            _isSelecting = false;
+            return;
+        }
+
+        _selectionPage = item;
+        _selectionTextPage = textPage;
+        _selectionAnchor = index;
+        _isSelecting = true;
+        fe.CaptureMouse();
+        UpdateSelection(item, textPage, index, index);
+        e.Handled = true;
+    }
+
+    private void OnPageMouseMove(object sender, MouseEventArgs e)
+    {
+        if (!_isSelecting || _selectionPage is null || _selectionTextPage is null) return;
+        if (sender is not FrameworkElement fe || fe.DataContext is not PdfPageItem item) return;
+        if (!ReferenceEquals(item, _selectionPage)) return;
+
+        var pos = e.GetPosition(fe);
+        var (pdfX, pdfY) = ToPdfCoords(item, pos);
+        var index = _selectionTextPage.GetCharIndexAtPoint(pdfX, pdfY, xTolerance: 8.0, yTolerance: 8.0);
+        if (index < 0) return;
+        UpdateSelection(item, _selectionTextPage, _selectionAnchor, index);
+    }
+
+    private void OnPageMouseUp(object sender, MouseButtonEventArgs e)
+    {
+        if (!_isSelecting) return;
+        if (sender is FrameworkElement fe) fe.ReleaseMouseCapture();
+        _isSelecting = false;
     }
 
     private void OnPageContainerDataContextChanged(object sender, DependencyPropertyChangedEventArgs e)

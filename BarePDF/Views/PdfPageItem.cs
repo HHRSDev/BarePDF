@@ -1,4 +1,6 @@
+using System.Collections.Generic;
 using System.ComponentModel;
+using System.Windows;
 using System.Windows.Media.Imaging;
 
 namespace BarePDF.Views;
@@ -46,6 +48,21 @@ public sealed class PdfPageItem : INotifyPropertyChanged
             OnPropertyChanged(nameof(Image));
         }
     }
+
+    private IReadOnlyList<Rect>? _selectedRects;
+    public IReadOnlyList<Rect>? SelectedRects
+    {
+        get => _selectedRects;
+        internal set
+        {
+            if (ReferenceEquals(_selectedRects, value)) return;
+            _selectedRects = value;
+            OnPropertyChanged(nameof(SelectedRects));
+        }
+    }
+
+    public int SelectionStart { get; internal set; } = -1;
+    public int SelectionEnd { get; internal set; } = -1;
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
