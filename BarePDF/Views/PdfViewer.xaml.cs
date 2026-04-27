@@ -327,17 +327,13 @@ public partial class PdfViewer : UserControl
         item.SelectionStart = start;
         item.SelectionEnd = end;
 
-        var rects = new List<Rect>(end - start + 1);
-        for (int i = start; i <= end && i < textPage.CharCount; i++)
+        var pdfRects = textPage.GetSelectionRects(start, end - start + 1);
+        var wpfRects = new List<Rect>(pdfRects.Count);
+        foreach (var box in pdfRects)
         {
-            try
-            {
-                var box = textPage.GetCharBox(i);
-                rects.Add(PdfBoxToWpfRect(item, box));
-            }
-            catch { /* skip glyphs we can't measure */ }
+            wpfRects.Add(PdfBoxToWpfRect(item, box));
         }
-        item.SelectedRects = rects;
+        item.SelectedRects = wpfRects;
     }
 
     private void ClearAllSelections()

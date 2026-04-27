@@ -41,6 +41,29 @@ public sealed class PdfTextPage : IDisposable
         return code <= char.MaxValue ? (char)code : '�';
     }
 
+    public IReadOnlyList<PdfRect> GetSelectionRects(int start, int count)
+    {
+        if (_handle is null) throw new ObjectDisposedException(nameof(PdfTextPage));
+        if (count <= 0) return Array.Empty<PdfRect>();
+        if (start < 0 || start >= CharCount) return Array.Empty<PdfRect>();
+        if (start + count > CharCount) count = CharCount - start;
+
+        lock (PdfNative.SyncRoot)
+        {
+            var rectCount = fpdf_text.FPDFTextCountRects(_handle, start, count);
+            if (rectCount <= 0) return Array.Empty<PdfRect>();
+
+            var rects = new List<PdfRect>(rectCount);
+            for (int i = 0; i < rectCount; i++)
+            {
+                double left = 0, top = 0, right = 0, bottom = 0;
+                fpdf_text.FPDFTextGetRect(_handle, i, ref left, ref top, ref right, ref bottom);
+                rects.Add(new PdfRect(left, top, right, bottom));
+            }
+            return rects;
+        }
+    }
+
     public int GetCharIndexAtPoint(double pdfX, double pdfY, double xTolerance = 5.0, double yTolerance = 5.0)
     {
         if (_handle is null) throw new ObjectDisposedException(nameof(PdfTextPage));
