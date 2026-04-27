@@ -18,6 +18,20 @@ public sealed class PdfPage : IDisposable
     public double WidthPoints { get; }
     public double HeightPoints { get; }
 
+    public PdfTextPage LoadTextPage()
+    {
+        if (_handle is null) throw new ObjectDisposedException(nameof(PdfPage));
+        FpdfTextpageT? handle;
+        int charCount;
+        lock (PdfNative.SyncRoot)
+        {
+            handle = fpdf_text.FPDFTextLoadPage(_handle);
+            charCount = handle is null ? 0 : fpdf_text.FPDFTextCountChars(handle);
+        }
+        if (handle is null) throw new PdfException("Failed to load text page", 0);
+        return new PdfTextPage(handle, charCount);
+    }
+
     public BitmapSource Render(double dpi)
     {
         if (_handle is null) throw new ObjectDisposedException(nameof(PdfPage));
