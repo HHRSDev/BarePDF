@@ -66,6 +66,13 @@ public partial class PdfViewer : UserControl
             items.Add(item);
         }
         PageList.ItemsSource = items;
+
+        await Dispatcher.InvokeAsync(() =>
+        {
+            if (_document is null) return;
+            _zoomScale = ComputeFitScale(_zoomMode);
+            ApplyScaleToItems();
+        }, System.Windows.Threading.DispatcherPriority.Loaded);
     }
 
     public void SetZoomMode(ZoomMode mode)
