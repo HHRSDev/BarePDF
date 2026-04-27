@@ -4,4 +4,7 @@ public sealed class AppSettings
 {
     public InstanceMode? InstanceMode { get; set; }
     public AppTheme? Theme { get; set; }
+    public Views.ZoomMode? LastZoomMode { get; set; }
+    public double? LastZoomScale { get; set; }
+    public bool? AutoFitWindowWidth { get; set; }
 }

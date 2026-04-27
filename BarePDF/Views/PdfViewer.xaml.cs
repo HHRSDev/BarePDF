@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using BarePDF.Pdfium;
+using BarePDF.Settings;
 
 namespace BarePDF.Views;
 
@@ -31,9 +32,21 @@ public partial class PdfViewer : UserControl
     public ZoomMode ZoomMode => _zoomMode;
     public double ZoomScale => _zoomScale;
 
+    public double FirstPageDisplayWidth =>
+        PageList.ItemsSource is IList<PdfPageItem> items && items.Count > 0
+            ? items[0].DisplayWidth
+            : 0;
+
     public async Task OpenAsync(string path)
     {
         Close();
+
+        var settings = SettingsStore.Load();
+        _zoomMode = settings.LastZoomMode ?? ZoomMode.FitPageHeight;
+        if (_zoomMode == ZoomMode.Custom && settings.LastZoomScale is { } savedScale)
+        {
+            _zoomScale = Math.Clamp(savedScale, MinScale, MaxScale);
+        }
 
         var document = await Task.Run(() => PdfDocument.Open(path));
         _document = document;
@@ -51,7 +64,7 @@ public partial class PdfViewer : UserControl
 
         _renderCts = new CancellationTokenSource();
 
-        if (sizes.Length > 0)
+        if (_zoomMode != ZoomMode.Custom && sizes.Length > 0)
         {
             var firstWidth = sizes[0].w * 96.0 / 72.0;
             var firstHeight = sizes[0].h * 96.0 / 72.0;
@@ -82,6 +95,7 @@ public partial class PdfViewer : UserControl
             ? Math.Clamp(_zoomScale, MinScale, MaxScale)
             : ComputeFitScale(mode);
         ChangeScale(newScale);
+        PersistZoomState();
     }
 
     public void ZoomIn() => ZoomBy(ZoomStep);
@@ -92,6 +106,15 @@ public partial class PdfViewer : UserControl
         var newScale = Math.Clamp(_zoomScale * factor, MinScale, MaxScale);
         _zoomMode = ZoomMode.Custom;
         ChangeScale(newScale);
+        PersistZoomState();
+    }
+
+    private void PersistZoomState()
+    {
+        var settings = SettingsStore.Load();
+        settings.LastZoomMode = _zoomMode;
+        settings.LastZoomScale = _zoomMode == ZoomMode.Custom ? _zoomScale : null;
+        SettingsStore.Save(settings);
     }
 
     private void ChangeScale(double newScale)
