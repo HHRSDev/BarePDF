@@ -53,7 +53,7 @@
                 </StackPanel>
             </RadioButton>
 
-            <StackPanel x:Name="AppearanceSection" Margin="0,4,0,20">
+            <StackPanel x:Name="AppearanceSection" Margin="0,4,0,16">
                 <TextBlock Text="Appearance" FontWeight="SemiBold" Margin="0,0,0,6"/>
                 <ComboBox x:Name="ThemeCombo"
                           Width="260"
@@ -62,6 +62,12 @@
                     <ComboBoxItem Tag="Light">Light</ComboBoxItem>
                     <ComboBoxItem Tag="Dark">Dark</ComboBoxItem>
                 </ComboBox>
+            </StackPanel>
+
+            <StackPanel x:Name="WindowSection" Margin="0,0,0,20">
+                <TextBlock Text="Window" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                <CheckBox x:Name="AutoFitWidthCheckbox"
+                          Content="Resize window width to fit document on open"/>
             </StackPanel>
 
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">

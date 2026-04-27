@@ -14,7 +14,13 @@ public partial class InstanceModeDialog : Wpf.Ui.Controls.FluentWindow
         _ => AppTheme.System,
     };
 
-    public InstanceModeDialog(bool isFirstRun, InstanceMode? currentMode, AppTheme? currentTheme = null)
+    public bool AutoFitWindowWidth => AutoFitWidthCheckbox.IsChecked == true;
+
+    public InstanceModeDialog(
+        bool isFirstRun,
+        InstanceMode? currentMode,
+        AppTheme? currentTheme = null,
+        bool currentAutoFitWidth = false)
     {
         InitializeComponent();
 
@@ -28,13 +34,16 @@ public partial class InstanceModeDialog : Wpf.Ui.Controls.FluentWindow
             case InstanceMode.Tabbed: TabbedOption.IsChecked = true; break;
         }
 
-        AppearanceSection.Visibility = isFirstRun ? Visibility.Collapsed : Visibility.Visible;
+        var showExtras = isFirstRun ? Visibility.Collapsed : Visibility.Visible;
+        AppearanceSection.Visibility = showExtras;
+        WindowSection.Visibility = showExtras;
         ThemeCombo.SelectedIndex = (currentTheme ?? AppTheme.System) switch
         {
             AppTheme.Light => 1,
             AppTheme.Dark => 2,
             _ => 0,
         };
+        AutoFitWidthCheckbox.IsChecked = currentAutoFitWidth;
 
         UpdateOkEnabled();
         SingletonOption.Checked += (_, _) => UpdateOkEnabled();

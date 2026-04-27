@@ -86,12 +86,28 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
         try
         {
             await Viewer.OpenAsync(path);
+            ApplyAutoFitWindowWidth(Viewer);
         }
         catch (PdfException ex)
         {
             CloseDocument();
             ShowOpenError(ex);
         }
+    }
+
+    private void ApplyAutoFitWindowWidth(PdfViewer viewer)
+    {
+        if (_mode == InstanceMode.Tabbed) return;
+        if (WindowState != WindowState.Normal) return;
+        var settings = SettingsStore.Load();
+        if (settings.AutoFitWindowWidth != true) return;
+
+        var pageWidth = viewer.FirstPageDisplayWidth;
+        if (pageWidth <= 0) return;
+
+        const double chrome = 80;
+        var maxWidth = SystemParameters.WorkArea.Width;
+        Width = Math.Min(pageWidth + chrome, maxWidth);
     }
 
     private async Task AddTab(string path)
@@ -210,7 +226,8 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
         var dialog = new InstanceModeDialog(
             isFirstRun: false,
             currentMode: settings.InstanceMode,
-            currentTheme: settings.Theme)
+            currentTheme: settings.Theme,
+            currentAutoFitWidth: settings.AutoFitWindowWidth ?? false)
         {
             Owner = this
         };
@@ -218,10 +235,12 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
 
         var modeChanged = chosenMode != settings.InstanceMode;
         var themeChanged = dialog.SelectedTheme != (settings.Theme ?? AppTheme.System);
-        if (!modeChanged && !themeChanged) return;
+        var autoFitChanged = dialog.AutoFitWindowWidth != (settings.AutoFitWindowWidth ?? false);
+        if (!modeChanged && !themeChanged && !autoFitChanged) return;
 
         settings.InstanceMode = chosenMode;
         settings.Theme = dialog.SelectedTheme;
+        settings.AutoFitWindowWidth = dialog.AutoFitWindowWidth;
         SettingsStore.Save(settings);
 
         if (themeChanged)
