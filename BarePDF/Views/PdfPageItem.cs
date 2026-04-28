@@ -64,6 +64,30 @@ public sealed class PdfPageItem : INotifyPropertyChanged
     public int SelectionStart { get; internal set; } = -1;
     public int SelectionEnd { get; internal set; } = -1;
 
+    private IReadOnlyList<Rect>? _matchRects;
+    public IReadOnlyList<Rect>? MatchRects
+    {
+        get => _matchRects;
+        internal set
+        {
+            if (ReferenceEquals(_matchRects, value)) return;
+            _matchRects = value;
+            OnPropertyChanged(nameof(MatchRects));
+        }
+    }
+
+    private IReadOnlyList<Rect>? _currentMatchRects;
+    public IReadOnlyList<Rect>? CurrentMatchRects
+    {
+        get => _currentMatchRects;
+        internal set
+        {
+            if (ReferenceEquals(_currentMatchRects, value)) return;
+            _currentMatchRects = value;
+            OnPropertyChanged(nameof(CurrentMatchRects));
+        }
+    }
+
     public event PropertyChangedEventHandler? PropertyChanged;
 
     private void OnPropertyChanged(string name) =>

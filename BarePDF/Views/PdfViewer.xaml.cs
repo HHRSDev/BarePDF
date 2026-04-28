@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Threading;
 using BarePDF.Pdfium;
 using BarePDF.Settings;
 
@@ -29,10 +30,33 @@ public partial class PdfViewer : UserControl
     private ZoomMode _zoomMode = ZoomMode.FitPageHeight;
     private double _zoomScale = 1.0;
 
+    private readonly List<(int pageIndex, int charIndex, int charCount)> _findResults = new();
+    private int _currentMatchIndex = -1;
+    private DispatcherTimer? _searchDebounce;
+
     public PdfViewer()
     {
         InitializeComponent();
         SizeChanged += OnViewerSizeChanged;
+
+        FindBar.QueryChanged += _ => ScheduleSearch();
+        FindBar.OptionsChanged += ScheduleSearch;
+        FindBar.NavigateNext += OnFindNext;
+        FindBar.NavigatePrev += OnFindPrev;
+        FindBar.CloseRequested += HideFindBar;
+    }
+
+    public void ShowFindBar()
+    {
+        if (_document is null) return;
+        FindBar.Visibility = Visibility.Visible;
+        FindBar.Focus();
+    }
+
+    public void HideFindBar()
+    {
+        FindBar.Visibility = Visibility.Collapsed;
+        ClearFindResults();
     }
 
     public bool HasDocument => _document is not null;
@@ -274,6 +298,11 @@ public partial class PdfViewer : UserControl
         _selectionTextPage = null;
         _selectionAnchor = -1;
 
+        _findResults.Clear();
+        _currentMatchIndex = -1;
+        _searchDebounce?.Stop();
+        FindBar.Visibility = Visibility.Collapsed;
+
         foreach (var tp in _textPageCache.Values) tp.Dispose();
         _textPageCache.Clear();
 
@@ -281,6 +310,145 @@ public partial class PdfViewer : UserControl
 
         _document?.Dispose();
         _document = null;
+    }
+
+    private void ScheduleSearch()
+    {
+        _searchDebounce ??= new DispatcherTimer(DispatcherPriority.Background)
+        {
+            Interval = TimeSpan.FromMilliseconds(250),
+        };
+        _searchDebounce.Tick -= OnSearchTick;
+        _searchDebounce.Tick += OnSearchTick;
+        _searchDebounce.Stop();
+        _searchDebounce.Start();
+    }
+
+    private void OnSearchTick(object? sender, EventArgs e)
+    {
+        _searchDebounce?.Stop();
+        RunSearch();
+    }
+
+    private void RunSearch()
+    {
+        var query = FindBar.Query;
+        if (string.IsNullOrEmpty(query) || _document is null)
+        {
+            ClearFindResults();
+            return;
+        }
+
+        _findResults.Clear();
+        _currentMatchIndex = -1;
+
+        if (PageList.ItemsSource is not IList<PdfPageItem> items)
+        {
+            FindBar.SetMatchInfo(0, 0);
+            return;
+        }
+
+        for (int p = 0; p < items.Count; p++)
+        {
+            var textPage = GetOrLoadTextPage(p);
+            if (textPage is null) continue;
+            foreach (var m in textPage.FindAll(query, FindBar.CaseSensitive, FindBar.WholeWord))
+            {
+                _findResults.Add((p, m.CharIndex, m.CharCount));
+            }
+        }
+
+        var perPage = new Dictionary<int, List<Rect>>();
+        foreach (var (pageIdx, charIdx, charCnt) in _findResults)
+        {
+            var textPage = GetOrLoadTextPage(pageIdx);
+            if (textPage is null) continue;
+            var item = items[pageIdx];
+            if (!perPage.TryGetValue(pageIdx, out var list))
+            {
+                list = new List<Rect>();
+                perPage[pageIdx] = list;
+            }
+            foreach (var pdfRect in textPage.GetSelectionRects(charIdx, charCnt))
+            {
+                list.Add(PdfBoxToWpfRect(item, pdfRect));
+            }
+        }
+        for (int p = 0; p < items.Count; p++)
+        {
+            items[p].MatchRects = perPage.TryGetValue(p, out var list) ? list : null;
+            items[p].CurrentMatchRects = null;
+        }
+
+        if (_findResults.Count > 0)
+        {
+            _currentMatchIndex = 0;
+            UpdateCurrentMatchHighlight();
+            ScrollToCurrentMatch();
+        }
+        FindBar.SetMatchInfo(_currentMatchIndex, _findResults.Count);
+    }
+
+    private void ClearFindResults()
+    {
+        _findResults.Clear();
+        _currentMatchIndex = -1;
+        if (PageList.ItemsSource is IEnumerable<PdfPageItem> items)
+        {
+            foreach (var item in items)
+            {
+                item.MatchRects = null;
+                item.CurrentMatchRects = null;
+            }
+        }
+        FindBar.SetMatchInfo(0, 0);
+    }
+
+    private void UpdateCurrentMatchHighlight()
+    {
+        if (PageList.ItemsSource is not IList<PdfPageItem> items) return;
+        foreach (var existing in items)
+        {
+            if (existing.CurrentMatchRects is not null) existing.CurrentMatchRects = null;
+        }
+
+        if (_currentMatchIndex < 0 || _currentMatchIndex >= _findResults.Count) return;
+        var (pageIdx, charIdx, charCnt) = _findResults[_currentMatchIndex];
+        var textPage = GetOrLoadTextPage(pageIdx);
+        if (textPage is null) return;
+        var pageItem = items[pageIdx];
+        var rects = new List<Rect>();
+        foreach (var pdfRect in textPage.GetSelectionRects(charIdx, charCnt))
+        {
+            rects.Add(PdfBoxToWpfRect(pageItem, pdfRect));
+        }
+        pageItem.CurrentMatchRects = rects;
+    }
+
+    private void ScrollToCurrentMatch()
+    {
+        if (_currentMatchIndex < 0 || _currentMatchIndex >= _findResults.Count) return;
+        if (PageList.ItemsSource is not IList<PdfPageItem> items) return;
+        var pageIdx = _findResults[_currentMatchIndex].pageIndex;
+        if (pageIdx < items.Count) PageList.ScrollIntoView(items[pageIdx]);
+    }
+
+    private void OnFindNext()
+    {
+        if (_findResults.Count == 0) return;
+        _currentMatchIndex = (_currentMatchIndex + 1) % _findResults.Count;
+        UpdateCurrentMatchHighlight();
+        ScrollToCurrentMatch();
+        FindBar.SetMatchInfo(_currentMatchIndex, _findResults.Count);
+    }
+
+    private void OnFindPrev()
+    {
+        if (_findResults.Count == 0) return;
+        _currentMatchIndex = (_currentMatchIndex - 1 + _findResults.Count) % _findResults.Count;
+        UpdateCurrentMatchHighlight();
+        ScrollToCurrentMatch();
+        FindBar.SetMatchInfo(_currentMatchIndex, _findResults.Count);
     }
 
     private PdfTextPage? GetOrLoadTextPage(int pageIndex)
