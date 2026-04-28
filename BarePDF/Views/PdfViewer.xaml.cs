@@ -430,7 +430,13 @@ public partial class PdfViewer : UserControl
         if (_currentMatchIndex < 0 || _currentMatchIndex >= _findResults.Count) return;
         if (PageList.ItemsSource is not IList<PdfPageItem> items) return;
         var pageIdx = _findResults[_currentMatchIndex].pageIndex;
-        if (pageIdx < items.Count) PageList.ScrollIntoView(items[pageIdx]);
+        if (pageIdx >= items.Count) return;
+        var target = items[pageIdx];
+        PageList.ScrollIntoView(target);
+        Dispatcher.InvokeAsync(() =>
+        {
+            if (target.Image is null) EnsureRendered(target);
+        }, DispatcherPriority.Loaded);
     }
 
     private void OnFindNext()
