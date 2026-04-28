@@ -75,7 +75,7 @@ public sealed class PdfDocument : IDisposable
             page = fpdfview.FPDF_LoadPage(_handle, index);
         }
         if (page is null) throw new PdfException("Failed to load page", 0);
-        return new PdfPage(page);
+        return new PdfPage(_handle, page);
     }
 
     public void Dispose()

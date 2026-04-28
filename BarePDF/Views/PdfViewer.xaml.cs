@@ -527,11 +527,21 @@ public partial class PdfViewer : UserControl
         if (sender is not FrameworkElement fe || fe.DataContext is not PdfPageItem item) return;
         if (_document is null) return;
 
+        var pos = e.GetPosition(fe);
+        var (pdfX, pdfY) = ToPdfCoords(item, pos);
+
+        var linkTarget = GetLinkAtPoint(item, pdfX, pdfY);
+        if (linkTarget is not null)
+        {
+            ClearAllSelections();
+            NavigateLink(linkTarget);
+            e.Handled = true;
+            return;
+        }
+
         var textPage = GetOrLoadTextPage(item.PageNumber - 1);
         if (textPage is null) return;
 
-        var pos = e.GetPosition(fe);
-        var (pdfX, pdfY) = ToPdfCoords(item, pos);
         var index = textPage.GetCharIndexAtPoint(pdfX, pdfY);
 
         ClearAllSelections();
@@ -548,6 +558,47 @@ public partial class PdfViewer : UserControl
         fe.CaptureMouse();
         UpdateSelection(item, textPage, index, index);
         e.Handled = true;
+    }
+
+    private PdfLinkTarget? GetLinkAtPoint(PdfPageItem item, double pdfX, double pdfY)
+    {
+        if (_document is null) return null;
+        try
+        {
+            using var page = _document.GetPage(item.PageNumber - 1);
+            return page.GetLinkAtPoint(pdfX, pdfY);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private void NavigateLink(PdfLinkTarget target)
+    {
+        switch (target)
+        {
+            case PdfUriLinkTarget uri:
+                try
+                {
+                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(uri.Url) { UseShellExecute = true });
+                }
+                catch { /* shell may refuse some schemes — silently ignore */ }
+                break;
+
+            case PdfGoToLinkTarget goTo:
+                if (PageList.ItemsSource is IList<PdfPageItem> items
+                    && goTo.PageIndex >= 0 && goTo.PageIndex < items.Count)
+                {
+                    var target2 = items[goTo.PageIndex];
+                    PageList.ScrollIntoView(target2);
+                    Dispatcher.InvokeAsync(() =>
+                    {
+                        if (target2.Image is null) EnsureRendered(target2);
+                    }, DispatcherPriority.Loaded);
+                }
+                break;
+        }
     }
 
     private void OnPageMouseMove(object sender, MouseEventArgs e)

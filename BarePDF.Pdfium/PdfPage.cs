@@ -1,3 +1,5 @@
+using System.Runtime.InteropServices;
+using System.Text;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using PDFiumCore;
@@ -7,9 +9,11 @@ namespace BarePDF.Pdfium;
 public sealed class PdfPage : IDisposable
 {
     private FpdfPageT? _handle;
+    private readonly FpdfDocumentT _documentHandle;
 
-    internal PdfPage(FpdfPageT handle)
+    internal PdfPage(FpdfDocumentT documentHandle, FpdfPageT handle)
     {
+        _documentHandle = documentHandle;
         _handle = handle;
         WidthPoints = fpdfview.FPDF_GetPageWidthF(handle);
         HeightPoints = fpdfview.FPDF_GetPageHeightF(handle);
@@ -17,6 +21,63 @@ public sealed class PdfPage : IDisposable
 
     public double WidthPoints { get; }
     public double HeightPoints { get; }
+
+    public PdfLinkTarget? GetLinkAtPoint(double pdfX, double pdfY)
+    {
+        if (_handle is null) throw new ObjectDisposedException(nameof(PdfPage));
+
+        lock (PdfNative.SyncRoot)
+        {
+            var link = fpdf_doc.FPDFLinkGetLinkAtPoint(_handle, pdfX, pdfY);
+            if (link is null) return null;
+
+            // Try direct destination first (intra-doc GoTo).
+            var dest = fpdf_doc.FPDFLinkGetDest(_documentHandle, link);
+            if (dest is not null)
+            {
+                var pageIndex = fpdf_doc.FPDFDestGetDestPageIndex(_documentHandle, dest);
+                if (pageIndex >= 0) return new PdfGoToLinkTarget(pageIndex);
+            }
+
+            // Otherwise read the action.
+            var action = fpdf_doc.FPDFLinkGetAction(link);
+            if (action is null) return null;
+
+            var actionType = fpdf_doc.FPDFActionGetType(action);
+            // 1 = GoTo (intra-doc), 3 = URI
+            if (actionType == 1)
+            {
+                var actionDest = fpdf_doc.FPDFActionGetDest(_documentHandle, action);
+                if (actionDest is not null)
+                {
+                    var pageIndex = fpdf_doc.FPDFDestGetDestPageIndex(_documentHandle, actionDest);
+                    if (pageIndex >= 0) return new PdfGoToLinkTarget(pageIndex);
+                }
+            }
+            else if (actionType == 3)
+            {
+                var requiredLen = fpdf_doc.FPDFActionGetURIPath(_documentHandle, action, IntPtr.Zero, 0);
+                if (requiredLen <= 1) return null;
+                var buffer = new byte[requiredLen];
+                var pin = GCHandle.Alloc(buffer, GCHandleType.Pinned);
+                try
+                {
+                    fpdf_doc.FPDFActionGetURIPath(_documentHandle, action, pin.AddrOfPinnedObject(), requiredLen);
+                }
+                finally
+                {
+                    pin.Free();
+                }
+                // PDFium returns ASCII/Latin-1 with a trailing null
+                var urlLen = (int)requiredLen - 1;
+                if (urlLen <= 0) return null;
+                var url = Encoding.ASCII.GetString(buffer, 0, urlLen);
+                return new PdfUriLinkTarget(url);
+            }
+
+            return null;
+        }
+    }
 
     public PdfTextPage LoadTextPage()
     {
