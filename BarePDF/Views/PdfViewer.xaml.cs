@@ -50,7 +50,7 @@ public partial class PdfViewer : UserControl
     {
         if (_document is null) return;
         FindBar.Visibility = Visibility.Visible;
-        FindBar.Focus();
+        Dispatcher.InvokeAsync(() => FindBar.Focus(), DispatcherPriority.Loaded);
     }
 
     public void HideFindBar()

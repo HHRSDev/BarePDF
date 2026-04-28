@@ -6,6 +6,9 @@ namespace BarePDF.Views;
 
 public sealed class PageSelectionLayer : FrameworkElement
 {
+    private const double PadX = 1.0;
+    private const double PadY = 2.0;
+
     public static readonly DependencyProperty SelectedRectsProperty =
         DependencyProperty.Register(
             nameof(SelectedRects),
@@ -35,7 +38,8 @@ public sealed class PageSelectionLayer : FrameworkElement
         foreach (var rect in rects)
         {
             if (rect.Width <= 0 || rect.Height <= 0) continue;
-            dc.DrawRectangle(HighlightBrush, null, rect);
+            dc.DrawRectangle(HighlightBrush, null,
+                new Rect(rect.X - PadX, rect.Y - PadY, rect.Width + 2 * PadX, rect.Height + 2 * PadY));
         }
     }
 }

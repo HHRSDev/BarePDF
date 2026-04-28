@@ -6,6 +6,9 @@ namespace BarePDF.Views;
 
 public sealed class PageFindLayer : FrameworkElement
 {
+    private const double PadX = 1.0;
+    private const double PadY = 2.0;
+
     public static readonly DependencyProperty MatchRectsProperty =
         DependencyProperty.Register(
             nameof(MatchRects),
@@ -38,16 +41,17 @@ public sealed class PageFindLayer : FrameworkElement
 
     static PageFindLayer()
     {
-        var match = new SolidColorBrush(Color.FromArgb(96, 255, 196, 0));
+        var match = new SolidColorBrush(Color.FromArgb(110, 255, 240, 0));
         match.Freeze();
         MatchBrush = match;
 
-        var current = new SolidColorBrush(Color.FromArgb(140, 255, 132, 0));
+        var current = new SolidColorBrush(Color.FromArgb(180, 255, 220, 0));
         current.Freeze();
         CurrentBrush = current;
 
-        var pen = new Pen(new SolidColorBrush(Color.FromArgb(220, 200, 70, 0)), 1.5);
-        pen.Brush.Freeze();
+        var penBrush = new SolidColorBrush(Color.FromArgb(220, 200, 160, 0));
+        penBrush.Freeze();
+        var pen = new Pen(penBrush, 1.5);
         pen.Freeze();
         CurrentPen = pen;
     }
@@ -60,7 +64,7 @@ public sealed class PageFindLayer : FrameworkElement
             foreach (var rect in matches)
             {
                 if (rect.Width <= 0 || rect.Height <= 0) continue;
-                dc.DrawRectangle(MatchBrush, null, rect);
+                dc.DrawRectangle(MatchBrush, null, Pad(rect));
             }
         }
 
@@ -70,8 +74,11 @@ public sealed class PageFindLayer : FrameworkElement
             foreach (var rect in current)
             {
                 if (rect.Width <= 0 || rect.Height <= 0) continue;
-                dc.DrawRectangle(CurrentBrush, CurrentPen, rect);
+                dc.DrawRectangle(CurrentBrush, CurrentPen, Pad(rect));
             }
         }
     }
+
+    private static Rect Pad(Rect r) =>
+        new(r.X - PadX, r.Y - PadY, r.Width + 2 * PadX, r.Height + 2 * PadY);
 }
