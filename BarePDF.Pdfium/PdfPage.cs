@@ -47,7 +47,8 @@ public sealed class PdfPage : IDisposable
             try
             {
                 fpdfview.FPDFBitmapFillRect(bitmap, 0, 0, pixelWidth, pixelHeight, 0xFFFFFFFFUL);
-                fpdfview.FPDF_RenderPageBitmap(bitmap, _handle, 0, 0, pixelWidth, pixelHeight, 0, 0);
+                // flags=1 → FPDF_ANNOT: paint annotations (highlights, free-text, sticky notes…) into the bitmap
+                fpdfview.FPDF_RenderPageBitmap(bitmap, _handle, 0, 0, pixelWidth, pixelHeight, 0, 1);
 
                 var buffer = fpdfview.FPDFBitmapGetBuffer(bitmap);
                 var stride = fpdfview.FPDFBitmapGetStride(bitmap);
