@@ -33,6 +33,8 @@
             <MenuItem Header="_View">
                 <MenuItem Header="_Find..." InputGestureText="Ctrl+F" Click="OnFindClick"/>
                 <Separator/>
+                <MenuItem Header="_Thumbnails" InputGestureText="Ctrl+T" Click="OnToggleThumbnailsClick"/>
+                <Separator/>
                 <MenuItem Header="Fit _Page" InputGestureText="Ctrl+0" Click="OnFitPageClick"/>
                 <MenuItem Header="Fit Page _Height" InputGestureText="Ctrl+1" Click="OnFitPageHeightClick"/>
                 <MenuItem Header="Fit _Width" InputGestureText="Ctrl+2" Click="OnFitWidthClick"/>
@@ -97,5 +99,6 @@
         <KeyBinding Key="OemPlus" Modifiers="Control" Command="{x:Static local:MainWindow.ZoomInCommand}"/>
         <KeyBinding Key="OemMinus" Modifiers="Control" Command="{x:Static local:MainWindow.ZoomOutCommand}"/>
         <KeyBinding Key="F" Modifiers="Control" Command="{x:Static local:MainWindow.FindCommand}"/>
+        <KeyBinding Key="T" Modifiers="Control" Command="{x:Static local:MainWindow.ToggleThumbnailsCommand}"/>
     </ui:FluentWindow.InputBindings>
 </ui:FluentWindow>

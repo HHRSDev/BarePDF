@@ -7,4 +7,5 @@ public sealed class AppSettings
     public Views.ZoomMode? LastZoomMode { get; set; }
     public double? LastZoomScale { get; set; }
     public bool? AutoFitWindowWidth { get; set; }
+    public bool? ShowThumbnails { get; set; }
 }

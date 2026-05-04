@@ -34,6 +34,10 @@ public partial class PdfViewer : UserControl
     private int _currentMatchIndex = -1;
     private DispatcherTimer? _searchDebounce;
 
+    private const double ThumbnailDpi = 32.0;
+    private readonly HashSet<int> _renderingThumbnails = new();
+    private List<ThumbnailItem>? _thumbnailItems;
+
     public PdfViewer()
     {
         InitializeComponent();
@@ -44,6 +48,69 @@ public partial class PdfViewer : UserControl
         FindBar.NavigateNext += OnFindNext;
         FindBar.NavigatePrev += OnFindPrev;
         FindBar.CloseRequested += HideFindBar;
+
+        Thumbnails.ThumbnailRealized += EnsureThumbnailRendered;
+        Thumbnails.PageRequested += GoToPage;
+    }
+
+    public bool ThumbnailsVisible => Thumbnails.Visibility == Visibility.Visible;
+
+    public void SetThumbnailsVisible(bool visible)
+    {
+        Thumbnails.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
+        var settings = SettingsStore.Load();
+        if ((settings.ShowThumbnails ?? false) != visible)
+        {
+            settings.ShowThumbnails = visible;
+            SettingsStore.Save(settings);
+        }
+    }
+
+    public void ToggleThumbnails() => SetThumbnailsVisible(!ThumbnailsVisible);
+
+    public void GoToPage(int pageIndex)
+    {
+        if (PageList.ItemsSource is not IList<PdfPageItem> items) return;
+        if (pageIndex < 0 || pageIndex >= items.Count) return;
+        var target = items[pageIndex];
+        PageList.ScrollIntoView(target);
+        Dispatcher.InvokeAsync(() =>
+        {
+            if (target.Image is null) EnsureRendered(target);
+        }, DispatcherPriority.Loaded);
+    }
+
+    private void EnsureThumbnailRendered(ThumbnailItem item)
+    {
+        if (item.Thumbnail is not null) return;
+        if (_document is null) return;
+
+        var index = item.PageNumber - 1;
+        if (!_renderingThumbnails.Add(index)) return;
+
+        var doc = _document;
+        var token = _renderCts?.Token ?? CancellationToken.None;
+
+        _ = Task.Run(() =>
+        {
+            try
+            {
+                if (token.IsCancellationRequested) return;
+                using var page = doc.GetPage(index);
+                if (token.IsCancellationRequested) return;
+                var bitmap = page.Render(ThumbnailDpi);
+                Dispatcher.InvokeAsync(() =>
+                {
+                    _renderingThumbnails.Remove(index);
+                    if (token.IsCancellationRequested) return;
+                    item.Thumbnail = bitmap;
+                });
+            }
+            catch
+            {
+                Dispatcher.InvokeAsync(() => _renderingThumbnails.Remove(index));
+            }
+        }, token);
     }
 
     public void ShowFindBar()
@@ -145,6 +212,16 @@ public partial class PdfViewer : UserControl
             items.Add(item);
         }
         PageList.ItemsSource = items;
+
+        _thumbnailItems = new List<ThumbnailItem>(sizes.Length);
+        for (int i = 0; i < sizes.Length; i++)
+        {
+            _thumbnailItems.Add(new ThumbnailItem(i + 1, sizes[i].w, sizes[i].h));
+        }
+        Thumbnails.SetItems(_thumbnailItems);
+        Thumbnails.Visibility = (settings.ShowThumbnails ?? false)
+            ? Visibility.Visible
+            : Visibility.Collapsed;
 
         await Dispatcher.InvokeAsync(() =>
         {
@@ -292,6 +369,9 @@ public partial class PdfViewer : UserControl
         _renderCts?.Dispose();
         _renderCts = null;
         _renderingPages.Clear();
+        _renderingThumbnails.Clear();
+        _thumbnailItems = null;
+        Thumbnails.SetItems(null);
 
         _isSelecting = false;
         _selectionPage = null;

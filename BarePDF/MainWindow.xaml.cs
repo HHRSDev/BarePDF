@@ -23,6 +23,7 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
     public static readonly RoutedCommand ZoomInCommand = new();
     public static readonly RoutedCommand ZoomOutCommand = new();
     public static readonly RoutedCommand FindCommand = new();
+    public static readonly RoutedCommand ToggleThumbnailsCommand = new();
 
     private readonly InstanceMode _mode;
 
@@ -46,6 +47,7 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
             (_, _) => GetActiveViewer()?.CopySelectedText(),
             (_, e) => e.CanExecute = GetActiveViewer()?.HasSelection ?? false));
         CommandBindings.Add(new CommandBinding(FindCommand, (_, _) => GetActiveViewer()?.ShowFindBar()));
+        CommandBindings.Add(new CommandBinding(ToggleThumbnailsCommand, (_, _) => GetActiveViewer()?.ToggleThumbnails()));
 
         Closed += OnWindowClosed;
     }
@@ -203,6 +205,7 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
     }
 
     private void OnFindClick(object sender, RoutedEventArgs e) => GetActiveViewer()?.ShowFindBar();
+    private void OnToggleThumbnailsClick(object sender, RoutedEventArgs e) => GetActiveViewer()?.ToggleThumbnails();
 
     private void OnFitPageClick(object sender, RoutedEventArgs e) => SetActiveZoomMode(ZoomMode.FitPage);
     private void OnFitPageHeightClick(object sender, RoutedEventArgs e) => SetActiveZoomMode(ZoomMode.FitPageHeight);
