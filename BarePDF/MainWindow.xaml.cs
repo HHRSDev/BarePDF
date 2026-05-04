@@ -95,6 +95,10 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
             await Viewer.OpenAsync(path);
             ApplyAutoFitWindowWidth(Viewer);
         }
+        catch (OperationCanceledException)
+        {
+            CloseDocument();
+        }
         catch (PdfException ex)
         {
             CloseDocument();
@@ -136,16 +140,25 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
         {
             await viewer.OpenAsync(path);
         }
+        catch (OperationCanceledException)
+        {
+            RemoveTabQuietly(viewer, tab);
+        }
         catch (PdfException ex)
         {
-            viewer.Close();
-            TabHost.Items.Remove(tab);
-            if (TabHost.Items.Count == 0)
-            {
-                TabHost.Visibility = Visibility.Collapsed;
-                ShowEmptyState();
-            }
+            RemoveTabQuietly(viewer, tab);
             ShowOpenError(ex);
+        }
+    }
+
+    private void RemoveTabQuietly(PdfViewer viewer, TabItem tab)
+    {
+        viewer.Close();
+        TabHost.Items.Remove(tab);
+        if (TabHost.Items.Count == 0)
+        {
+            TabHost.Visibility = Visibility.Collapsed;
+            ShowEmptyState();
         }
     }
 

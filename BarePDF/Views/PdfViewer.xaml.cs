@@ -181,7 +181,31 @@ public partial class PdfViewer : UserControl
             _zoomScale = Math.Clamp(savedScale, MinScale, MaxScale);
         }
 
-        var document = await Task.Run(() => PdfDocument.Open(path));
+        PdfDocument? document = null;
+        string? attemptedPassword = null;
+        var hasAttempted = false;
+        while (document is null)
+        {
+            try
+            {
+                var pwd = attemptedPassword;
+                document = await Task.Run(() => PdfDocument.Open(path, pwd));
+            }
+            catch (PdfException ex) when (ex.ErrorCode == 4)
+            {
+                var prompt = new PasswordPromptDialog(System.IO.Path.GetFileName(path), retry: hasAttempted)
+                {
+                    Owner = Window.GetWindow(this)
+                };
+                if (prompt.ShowDialog() != true)
+                {
+                    throw new OperationCanceledException("Password entry cancelled.");
+                }
+                attemptedPassword = prompt.Password;
+                hasAttempted = true;
+            }
+        }
+
         _document = document;
 
         var sizes = await Task.Run(() =>
