@@ -93,6 +93,7 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
         try
         {
             await Viewer.OpenAsync(path);
+            AddToRecents(path);
             ApplyAutoFitWindowWidth(Viewer);
         }
         catch (OperationCanceledException)
@@ -139,6 +140,7 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
         try
         {
             await viewer.OpenAsync(path);
+            AddToRecents(path);
         }
         catch (OperationCanceledException)
         {
@@ -283,6 +285,88 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
     }
 
     private void OnExitClick(object sender, RoutedEventArgs e) => Close();
+
+    private const int MaxRecentFiles = 10;
+
+    private void OnFileMenuOpened(object sender, RoutedEventArgs e)
+    {
+        BuildRecentMenu();
+    }
+
+    private void BuildRecentMenu()
+    {
+        RecentMenu.Items.Clear();
+        var settings = SettingsStore.Load();
+        var recents = settings.RecentFiles ?? new System.Collections.Generic.List<string>();
+
+        if (recents.Count == 0)
+        {
+            RecentMenu.Items.Add(new MenuItem { Header = "(no recent files)", IsEnabled = false });
+            return;
+        }
+
+        for (int i = 0; i < recents.Count; i++)
+        {
+            var p = recents[i];
+            var name = Path.GetFileName(p);
+            var item = new MenuItem
+            {
+                Header = $"_{(i + 1) % 10} {name}",
+                ToolTip = p,
+                Tag = p,
+            };
+            item.Click += OnRecentItemClick;
+            RecentMenu.Items.Add(item);
+        }
+        RecentMenu.Items.Add(new Separator());
+        var clear = new MenuItem { Header = "Clear Recent" };
+        clear.Click += OnClearRecentClick;
+        RecentMenu.Items.Add(clear);
+    }
+
+    private async void OnRecentItemClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is not MenuItem mi || mi.Tag is not string path) return;
+        if (!File.Exists(path))
+        {
+            RemoveFromRecents(path);
+            MessageBox.Show(this,
+                $"\"{Path.GetFileName(path)}\" could not be found.\nIt may have been moved or deleted.",
+                "BarePDF",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+            return;
+        }
+        await OpenPdf(path);
+    }
+
+    private void OnClearRecentClick(object sender, RoutedEventArgs e)
+    {
+        var settings = SettingsStore.Load();
+        settings.RecentFiles = new System.Collections.Generic.List<string>();
+        SettingsStore.Save(settings);
+    }
+
+    private static void AddToRecents(string path)
+    {
+        var settings = SettingsStore.Load();
+        var list = settings.RecentFiles ?? new System.Collections.Generic.List<string>();
+        var full = Path.GetFullPath(path);
+        list.RemoveAll(p => string.Equals(p, full, StringComparison.OrdinalIgnoreCase));
+        list.Insert(0, full);
+        while (list.Count > MaxRecentFiles) list.RemoveAt(list.Count - 1);
+        settings.RecentFiles = list;
+        SettingsStore.Save(settings);
+    }
+
+    private static void RemoveFromRecents(string path)
+    {
+        var settings = SettingsStore.Load();
+        var list = settings.RecentFiles ?? new System.Collections.Generic.List<string>();
+        list.RemoveAll(p => string.Equals(p, path, StringComparison.OrdinalIgnoreCase));
+        settings.RecentFiles = list;
+        SettingsStore.Save(settings);
+    }
 
     private void OnAboutClick(object sender, RoutedEventArgs e)
     {

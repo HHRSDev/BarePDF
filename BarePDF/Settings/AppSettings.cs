@@ -8,4 +8,5 @@ public sealed class AppSettings
     public double? LastZoomScale { get; set; }
     public bool? AutoFitWindowWidth { get; set; }
     public bool? ShowThumbnails { get; set; }
+    public System.Collections.Generic.List<string>? RecentFiles { get; set; }
 }

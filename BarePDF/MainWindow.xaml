@@ -19,8 +19,11 @@
             </ui:TitleBar.Icon>
         </ui:TitleBar>
         <Menu DockPanel.Dock="Top" Background="Transparent">
-            <MenuItem Header="_File">
+            <MenuItem Header="_File" SubmenuOpened="OnFileMenuOpened">
                 <MenuItem Header="_Open..." InputGestureText="Ctrl+O" Click="OnOpenClick"/>
+                <MenuItem x:Name="RecentMenu" Header="Open _Recent">
+                    <MenuItem Header="(no recent files)" IsEnabled="False"/>
+                </MenuItem>
                 <MenuItem Header="_Close" InputGestureText="Ctrl+W" Click="OnCloseDocumentClick"/>
                 <Separator/>
                 <MenuItem Header="_Print..." InputGestureText="Ctrl+P" Click="OnPrintClick"/>
