@@ -79,7 +79,20 @@ public partial class PdfViewer : UserControl
         if (PageList.ItemsSource is not IList<PdfPageItem> items) return;
         if (pageIndex < 0 || pageIndex >= items.Count) return;
         var target = items[pageIndex];
-        PageList.ScrollIntoView(target);
+
+        if (_displayMode == PageDisplayMode.SinglePage)
+        {
+            // Other items are Collapsed, so ScrollIntoView won't work. Set the index
+            // explicitly (UpdateSinglePageVisibility swaps which page is visible) and
+            // reset the scroll to the top of the new page.
+            CurrentPageIndex = pageIndex;
+            GetListScrollViewer()?.ScrollToHome();
+        }
+        else
+        {
+            PageList.ScrollIntoView(target);
+        }
+
         Dispatcher.InvokeAsync(() =>
         {
             if (target.Image is null) EnsureRendered(target);
@@ -128,6 +141,31 @@ public partial class PdfViewer : UserControl
             {
                 item.ItemVisibility = Visibility.Visible;
             }
+        }
+    }
+
+    private void OnPageListPreviewMouseWheel(object sender, MouseWheelEventArgs e)
+    {
+        if (_displayMode != PageDisplayMode.SinglePage) return;
+        var sv = GetListScrollViewer();
+        if (sv is null) return;
+
+        const double edgeTolerance = 0.5;
+        var atTop = sv.VerticalOffset <= edgeTolerance;
+        var atBottom = sv.VerticalOffset >= sv.ScrollableHeight - edgeTolerance;
+
+        if (e.Delta > 0 && atTop && CurrentPageIndex > 0)
+        {
+            GoToPreviousPage();
+            // Land at the bottom of the previous page so wheeling up reads naturally.
+            Dispatcher.InvokeAsync(() => GetListScrollViewer()?.ScrollToEnd(),
+                DispatcherPriority.Loaded);
+            e.Handled = true;
+        }
+        else if (e.Delta < 0 && atBottom && CurrentPageIndex < PageCount - 1)
+        {
+            GoToNextPage();
+            e.Handled = true;
         }
     }
 
