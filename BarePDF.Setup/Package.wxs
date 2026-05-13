@@ -95,6 +95,7 @@
                   BinaryRef="Wix4UtilCA_X64" />
 
     <ui:WixUI Id="WixUI_InstallDir" InstallDirectory="INSTALLFOLDER" />
+    <WixVariable Id="WixUILicenseRtf" Value="License.rtf" />
 
     <UI>
       <Publish Dialog="ExitDialog"
