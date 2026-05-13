@@ -27,7 +27,7 @@ public partial class PdfViewer : UserControl
     private int _selectionAnchor = -1;
     private bool _isSelecting;
 
-    private ZoomMode _zoomMode = ZoomMode.FitPageHeight;
+    private ZoomMode _zoomMode = ZoomMode.FitPage;
     private double _zoomScale = 1.0;
 
     private readonly List<(int pageIndex, int charIndex, int charCount)> _findResults = new();
@@ -175,7 +175,7 @@ public partial class PdfViewer : UserControl
         Close();
 
         var settings = SettingsStore.Load();
-        _zoomMode = settings.LastZoomMode ?? ZoomMode.FitPageHeight;
+        _zoomMode = settings.LastZoomMode ?? ZoomMode.FitPage;
         if (_zoomMode == ZoomMode.Custom && settings.LastZoomScale is { } savedScale)
         {
             _zoomScale = Math.Clamp(savedScale, MinScale, MaxScale);
