@@ -42,6 +42,7 @@
                     <Setter Property="Focusable" Value="False"/>
                     <Setter Property="IsTabStop" Value="False"/>
                     <Setter Property="Padding" Value="0"/>
+                    <Setter Property="Visibility" Value="{Binding ItemVisibility}"/>
                     <Setter Property="Template">
                         <Setter.Value>
                             <ControlTemplate TargetType="ListBoxItem">

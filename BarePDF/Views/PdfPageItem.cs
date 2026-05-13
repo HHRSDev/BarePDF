@@ -81,6 +81,18 @@ public sealed class PdfPageItem : INotifyPropertyChanged
     public int SelectionStart { get; internal set; } = -1;
     public int SelectionEnd { get; internal set; } = -1;
 
+    private System.Windows.Visibility _itemVisibility = System.Windows.Visibility.Visible;
+    public System.Windows.Visibility ItemVisibility
+    {
+        get => _itemVisibility;
+        internal set
+        {
+            if (_itemVisibility == value) return;
+            _itemVisibility = value;
+            OnPropertyChanged(nameof(ItemVisibility));
+        }
+    }
+
     private IReadOnlyList<Rect>? _matchRects;
     public IReadOnlyList<Rect>? MatchRects
     {

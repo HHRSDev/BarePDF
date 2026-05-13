@@ -31,6 +31,7 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
     public static readonly RoutedCommand GoToPageCommand = new();
     public static readonly RoutedCommand RotateRightCommand = new();
     public static readonly RoutedCommand RotateLeftCommand = new();
+    public static readonly RoutedCommand ToggleSinglePageCommand = new();
 
     private readonly InstanceMode _mode;
     private string? _currentDocumentPath;
@@ -63,6 +64,7 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
         CommandBindings.Add(new CommandBinding(GoToPageCommand, (_, _) => OpenGoToPageDialog()));
         CommandBindings.Add(new CommandBinding(RotateRightCommand, (_, _) => GetActiveViewer()?.RotateRight()));
         CommandBindings.Add(new CommandBinding(RotateLeftCommand, (_, _) => GetActiveViewer()?.RotateLeft()));
+        CommandBindings.Add(new CommandBinding(ToggleSinglePageCommand, (_, _) => ToggleSinglePage()));
 
         Closed += OnWindowClosed;
     }
@@ -111,6 +113,7 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
             await Viewer.OpenAsync(path);
             AddToRecents(path);
             ApplyAutoFitWindowWidth(Viewer);
+            SyncDisplayModeMenu();
         }
         catch (OperationCanceledException)
         {
@@ -157,6 +160,7 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
         {
             await viewer.OpenAsync(path);
             AddToRecents(path);
+            SyncDisplayModeMenu();
         }
         catch (OperationCanceledException)
         {
@@ -240,6 +244,24 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
     private void OnGoToPageClick(object sender, RoutedEventArgs e) => OpenGoToPageDialog();
     private void OnRotateRightClick(object sender, RoutedEventArgs e) => GetActiveViewer()?.RotateRight();
     private void OnRotateLeftClick(object sender, RoutedEventArgs e) => GetActiveViewer()?.RotateLeft();
+    private void OnSinglePageClick(object sender, RoutedEventArgs e) => ToggleSinglePage();
+
+    private void ToggleSinglePage()
+    {
+        var viewer = GetActiveViewer();
+        if (viewer is null) return;
+        var newMode = viewer.DisplayMode == PageDisplayMode.SinglePage
+            ? PageDisplayMode.Continuous
+            : PageDisplayMode.SinglePage;
+        viewer.SetDisplayMode(newMode);
+        SyncDisplayModeMenu();
+    }
+
+    private void SyncDisplayModeMenu()
+    {
+        var viewer = GetActiveViewer();
+        SinglePageMenuItem.IsChecked = viewer?.DisplayMode == PageDisplayMode.SinglePage;
+    }
 
     private void OpenGoToPageDialog()
     {
@@ -445,6 +467,7 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
             _currentDocumentPath = null;
         }
         ApplyTitle();
+        SyncDisplayModeMenu();
     }
 
     private void OnCloseTabClick(object sender, RoutedEventArgs e)

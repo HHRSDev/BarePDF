@@ -21,6 +21,7 @@ public partial class PdfViewer : UserControl
     private bool _scrollSubscribed;
     private int _rotation;
     private string? _currentPath;
+    private PageDisplayMode _displayMode = PageDisplayMode.Continuous;
 
     private PdfDocument? _document;
     private CancellationTokenSource? _renderCts;
@@ -85,10 +86,61 @@ public partial class PdfViewer : UserControl
         }, DispatcherPriority.Loaded);
     }
 
-    public void ScrollPageDown() => GetListScrollViewer()?.PageDown();
-    public void ScrollPageUp() => GetListScrollViewer()?.PageUp();
-    public void ScrollToFirstPage() => GetListScrollViewer()?.ScrollToHome();
-    public void ScrollToLastPage() => GetListScrollViewer()?.ScrollToEnd();
+    public void ScrollPageDown()
+    {
+        if (_displayMode == PageDisplayMode.SinglePage) GoToNextPage();
+        else GetListScrollViewer()?.PageDown();
+    }
+    public void ScrollPageUp()
+    {
+        if (_displayMode == PageDisplayMode.SinglePage) GoToPreviousPage();
+        else GetListScrollViewer()?.PageUp();
+    }
+    public void ScrollToFirstPage() => GoToPage(0);
+    public void ScrollToLastPage()
+    {
+        if (PageCount > 0) GoToPage(PageCount - 1);
+    }
+
+    public PageDisplayMode DisplayMode => _displayMode;
+
+    public void SetDisplayMode(PageDisplayMode mode)
+    {
+        if (_displayMode == mode) return;
+        _displayMode = mode;
+        ApplyDisplayMode();
+
+        var settings = SettingsStore.Load();
+        settings.PageDisplayMode = mode;
+        SettingsStore.Save(settings);
+    }
+
+    private void ApplyDisplayMode()
+    {
+        if (PageList.ItemsSource is not IList<PdfPageItem> items) return;
+        if (_displayMode == PageDisplayMode.SinglePage)
+        {
+            UpdateSinglePageVisibility();
+        }
+        else
+        {
+            foreach (var item in items)
+            {
+                item.ItemVisibility = Visibility.Visible;
+            }
+        }
+    }
+
+    private void UpdateSinglePageVisibility()
+    {
+        if (_displayMode != PageDisplayMode.SinglePage) return;
+        if (PageList.ItemsSource is not IList<PdfPageItem> items) return;
+        var current = CurrentPageIndex;
+        for (int i = 0; i < items.Count; i++)
+        {
+            items[i].ItemVisibility = i == current ? Visibility.Visible : Visibility.Collapsed;
+        }
+    }
 
     public void RotateRight() => ApplyRotation((_rotation + 1) % 4);
     public void RotateLeft() => ApplyRotation((_rotation + 3) % 4);
@@ -138,6 +190,7 @@ public partial class PdfViewer : UserControl
             if (_currentPageIndex == clamped) return;
             _currentPageIndex = clamped;
             UpdatePageIndicator();
+            UpdateSinglePageVisibility();
         }
     }
 
@@ -358,6 +411,7 @@ public partial class PdfViewer : UserControl
         _rotation = settings.PerDocumentRotation is { } map && map.TryGetValue(_currentPath, out var savedRot)
             ? ((savedRot % 4) + 4) % 4
             : 0;
+        _displayMode = settings.PageDisplayMode ?? PageDisplayMode.Continuous;
 
         PdfDocument? document = null;
         string? attemptedPassword = null;
@@ -416,6 +470,7 @@ public partial class PdfViewer : UserControl
             items.Add(item);
         }
         PageList.ItemsSource = items;
+        ApplyDisplayMode();
 
         _thumbnailItems = new List<ThumbnailItem>(sizes.Length);
         for (int i = 0; i < sizes.Length; i++)

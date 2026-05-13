@@ -39,6 +39,10 @@
                 <MenuItem Header="_Go to Page..." InputGestureText="Ctrl+G" Click="OnGoToPageClick"/>
                 <Separator/>
                 <MenuItem Header="_Thumbnails" InputGestureText="Ctrl+T" Click="OnToggleThumbnailsClick"/>
+                <MenuItem x:Name="SinglePageMenuItem"
+                          Header="_Single Page Mode"
+                          IsCheckable="True"
+                          Click="OnSinglePageClick"/>
                 <Separator/>
                 <MenuItem Header="Fit _Page" InputGestureText="Ctrl+0" Click="OnFitPageClick"/>
                 <MenuItem Header="Fit Page _Height" InputGestureText="Ctrl+1" Click="OnFitPageHeightClick"/>

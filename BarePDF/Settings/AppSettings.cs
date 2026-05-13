@@ -11,4 +11,5 @@ public sealed class AppSettings
     public System.Collections.Generic.List<string>? RecentFiles { get; set; }
     public System.Collections.Generic.Dictionary<string, int>? PerDocumentRotation { get; set; }
     public TitleBarFilenameMode? TitleBarFilenameMode { get; set; }
+    public PageDisplayMode? PageDisplayMode { get; set; }
 }
