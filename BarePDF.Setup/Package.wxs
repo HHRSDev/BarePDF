@@ -67,13 +67,28 @@
       <!-- Show BarePDF in .pdf's "Open with" submenu and Default Apps picker -->
       <RegistryValue Root="HKLM" Key="Software\Classes\.pdf\OpenWithProgids"
                      Name="BarePDF.Document" Type="string" Value="" />
+
+      <!-- Default Programs (Capabilities) — makes BarePDF a first-class entry
+           in Settings > Apps > Default apps, with its own per-app page. -->
+      <RegistryValue Root="HKLM" Key="Software\BarePDF\Capabilities"
+                     Name="ApplicationName" Type="string" Value="BarePDF" />
+      <RegistryValue Root="HKLM" Key="Software\BarePDF\Capabilities"
+                     Name="ApplicationDescription" Type="string"
+                     Value="A fast, clean, distraction-free PDF viewer." />
+      <RegistryValue Root="HKLM" Key="Software\BarePDF\Capabilities\FileAssociations"
+                     Name=".pdf" Type="string" Value="BarePDF.Document" />
+
+      <!-- Tell Windows about the registration above. -->
+      <RegistryValue Root="HKLM" Key="Software\RegisteredApplications"
+                     Name="BarePDF" Type="string"
+                     Value="Software\BarePDF\Capabilities" />
     </Component>
 
     <!-- Final-page checkbox: open Windows Default Apps settings so the user can pick BarePDF -->
     <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1" />
     <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT"
               Value="Open Windows Default apps to make BarePDF the default for PDFs" />
-    <Property Id="WixShellExecTarget" Value="ms-settings:defaultapps?registeredAppUser=BarePDF" />
+    <Property Id="WixShellExecTarget" Value="ms-settings:defaultapps?registeredAppName=BarePDF" />
     <CustomAction Id="LaunchDefaultAppsSettings"
                   DllEntry="WixShellExec"
                   Impersonate="yes"
