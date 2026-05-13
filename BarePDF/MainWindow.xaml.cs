@@ -29,6 +29,8 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
     public static readonly RoutedCommand GoToFirstPageCommand = new();
     public static readonly RoutedCommand GoToLastPageCommand = new();
     public static readonly RoutedCommand GoToPageCommand = new();
+    public static readonly RoutedCommand RotateRightCommand = new();
+    public static readonly RoutedCommand RotateLeftCommand = new();
 
     private readonly InstanceMode _mode;
 
@@ -58,6 +60,8 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
         CommandBindings.Add(new CommandBinding(GoToFirstPageCommand, (_, _) => GetActiveViewer()?.ScrollToFirstPage()));
         CommandBindings.Add(new CommandBinding(GoToLastPageCommand, (_, _) => GetActiveViewer()?.ScrollToLastPage()));
         CommandBindings.Add(new CommandBinding(GoToPageCommand, (_, _) => OpenGoToPageDialog()));
+        CommandBindings.Add(new CommandBinding(RotateRightCommand, (_, _) => GetActiveViewer()?.RotateRight()));
+        CommandBindings.Add(new CommandBinding(RotateLeftCommand, (_, _) => GetActiveViewer()?.RotateLeft()));
 
         Closed += OnWindowClosed;
     }
@@ -231,6 +235,8 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
 
     private void OnFindClick(object sender, RoutedEventArgs e) => GetActiveViewer()?.ShowFindBar();
     private void OnGoToPageClick(object sender, RoutedEventArgs e) => OpenGoToPageDialog();
+    private void OnRotateRightClick(object sender, RoutedEventArgs e) => GetActiveViewer()?.RotateRight();
+    private void OnRotateLeftClick(object sender, RoutedEventArgs e) => GetActiveViewer()?.RotateLeft();
 
     private void OpenGoToPageDialog()
     {

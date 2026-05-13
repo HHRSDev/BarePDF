@@ -10,6 +10,7 @@ public sealed class PdfPageItem : INotifyPropertyChanged
     private const double LogicalPerPoint = 96.0 / 72.0;
 
     private double _scale = 1.0;
+    private int _rotation;
     private BitmapSource? _image;
 
     public PdfPageItem(int pageNumber, double widthPoints, double heightPoints)
@@ -23,8 +24,24 @@ public sealed class PdfPageItem : INotifyPropertyChanged
     public double WidthPoints { get; }
     public double HeightPoints { get; }
 
-    public double DisplayWidth => WidthPoints * LogicalPerPoint * _scale;
-    public double DisplayHeight => HeightPoints * LogicalPerPoint * _scale;
+    public double DisplayWidth =>
+        ((_rotation == 1 || _rotation == 3) ? HeightPoints : WidthPoints) * LogicalPerPoint * _scale;
+    public double DisplayHeight =>
+        ((_rotation == 1 || _rotation == 3) ? WidthPoints : HeightPoints) * LogicalPerPoint * _scale;
+
+    public int Rotation
+    {
+        get => _rotation;
+        internal set
+        {
+            var normalized = ((value % 4) + 4) % 4;
+            if (_rotation == normalized) return;
+            _rotation = normalized;
+            OnPropertyChanged(nameof(Rotation));
+            OnPropertyChanged(nameof(DisplayWidth));
+            OnPropertyChanged(nameof(DisplayHeight));
+        }
+    }
 
     public double Scale
     {

@@ -93,13 +93,17 @@ public sealed class PdfPage : IDisposable
         return new PdfTextPage(handle, charCount);
     }
 
-    public BitmapSource Render(double dpi)
+    public BitmapSource Render(double dpi, int rotation = 0)
     {
         if (_handle is null) throw new ObjectDisposedException(nameof(PdfPage));
         if (dpi <= 0) throw new ArgumentOutOfRangeException(nameof(dpi));
+        rotation = ((rotation % 4) + 4) % 4;
 
-        var pixelWidth = Math.Max(1, (int)Math.Round(WidthPoints * dpi / 72.0));
-        var pixelHeight = Math.Max(1, (int)Math.Round(HeightPoints * dpi / 72.0));
+        var swap = rotation == 1 || rotation == 3;
+        var widthInPoints = swap ? HeightPoints : WidthPoints;
+        var heightInPoints = swap ? WidthPoints : HeightPoints;
+        var pixelWidth = Math.Max(1, (int)Math.Round(widthInPoints * dpi / 72.0));
+        var pixelHeight = Math.Max(1, (int)Math.Round(heightInPoints * dpi / 72.0));
 
         lock (PdfNative.SyncRoot)
         {
@@ -109,7 +113,7 @@ public sealed class PdfPage : IDisposable
             {
                 fpdfview.FPDFBitmapFillRect(bitmap, 0, 0, pixelWidth, pixelHeight, 0xFFFFFFFFUL);
                 // flags=1 → FPDF_ANNOT: paint annotations (highlights, free-text, sticky notes…) into the bitmap
-                fpdfview.FPDF_RenderPageBitmap(bitmap, _handle, 0, 0, pixelWidth, pixelHeight, 0, 1);
+                fpdfview.FPDF_RenderPageBitmap(bitmap, _handle, 0, 0, pixelWidth, pixelHeight, rotation, 1);
 
                 var buffer = fpdfview.FPDFBitmapGetBuffer(bitmap);
                 var stride = fpdfview.FPDFBitmapGetStride(bitmap);

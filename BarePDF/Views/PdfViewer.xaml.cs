@@ -19,6 +19,8 @@ public partial class PdfViewer : UserControl
 
     private int _currentPageIndex;
     private bool _scrollSubscribed;
+    private int _rotation;
+    private string? _currentPath;
 
     private PdfDocument? _document;
     private CancellationTokenSource? _renderCts;
@@ -87,6 +89,45 @@ public partial class PdfViewer : UserControl
     public void ScrollPageUp() => GetListScrollViewer()?.PageUp();
     public void ScrollToFirstPage() => GetListScrollViewer()?.ScrollToHome();
     public void ScrollToLastPage() => GetListScrollViewer()?.ScrollToEnd();
+
+    public void RotateRight() => ApplyRotation((_rotation + 1) % 4);
+    public void RotateLeft() => ApplyRotation((_rotation + 3) % 4);
+
+    private void ApplyRotation(int rotation)
+    {
+        if (_document is null) return;
+        rotation = ((rotation % 4) + 4) % 4;
+        if (_rotation == rotation) return;
+        _rotation = rotation;
+
+        if (PageList.ItemsSource is IList<PdfPageItem> items)
+        {
+            foreach (var item in items)
+            {
+                item.Rotation = _rotation;
+                item.Image = null;
+            }
+        }
+
+        // Rotation changes effective page dimensions; recompute fit and re-render visible items.
+        if (_zoomMode != ZoomMode.Custom)
+        {
+            _zoomScale = ComputeFitScale(_zoomMode);
+        }
+        ApplyScaleToItems();
+
+        PersistRotation();
+    }
+
+    private void PersistRotation()
+    {
+        if (_currentPath is null) return;
+        var settings = SettingsStore.Load();
+        var map = settings.PerDocumentRotation ??= new Dictionary<string, int>();
+        if (_rotation == 0) map.Remove(_currentPath);
+        else map[_currentPath] = _rotation;
+        SettingsStore.Save(settings);
+    }
 
     public int CurrentPageIndex
     {
@@ -313,6 +354,11 @@ public partial class PdfViewer : UserControl
             _zoomScale = Math.Clamp(savedScale, MinScale, MaxScale);
         }
 
+        _currentPath = System.IO.Path.GetFullPath(path);
+        _rotation = settings.PerDocumentRotation is { } map && map.TryGetValue(_currentPath, out var savedRot)
+            ? ((savedRot % 4) + 4) % 4
+            : 0;
+
         PdfDocument? document = null;
         string? attemptedPassword = null;
         var hasAttempted = false;
@@ -355,8 +401,9 @@ public partial class PdfViewer : UserControl
 
         if (_zoomMode != ZoomMode.Custom && sizes.Length > 0)
         {
-            var firstWidth = sizes[0].w * 96.0 / 72.0;
-            var firstHeight = sizes[0].h * 96.0 / 72.0;
+            var swap = _rotation == 1 || _rotation == 3;
+            var firstWidth = (swap ? sizes[0].h : sizes[0].w) * 96.0 / 72.0;
+            var firstHeight = (swap ? sizes[0].w : sizes[0].h) * 96.0 / 72.0;
             _zoomScale = ComputeFitScaleForSize(_zoomMode, firstWidth, firstHeight);
         }
 
@@ -364,6 +411,7 @@ public partial class PdfViewer : UserControl
         for (int i = 0; i < sizes.Length; i++)
         {
             var item = new PdfPageItem(pageNumber: i + 1, sizes[i].w, sizes[i].h);
+            item.Rotation = _rotation;
             item.Scale = _zoomScale;
             items.Add(item);
         }
@@ -561,6 +609,9 @@ public partial class PdfViewer : UserControl
 
         _currentPageIndex = 0;
         UpdatePageIndicator();
+
+        _rotation = 0;
+        _currentPath = null;
     }
 
     private void ScheduleSearch()
@@ -892,6 +943,7 @@ public partial class PdfViewer : UserControl
         var token = _renderCts?.Token ?? CancellationToken.None;
         var dpi = 96.0 * _zoomScale;
         var capturedScale = _zoomScale;
+        var capturedRotation = _rotation;
 
         _ = Task.Run(() =>
         {
@@ -900,12 +952,12 @@ public partial class PdfViewer : UserControl
                 if (token.IsCancellationRequested) return;
                 using var page = doc.GetPage(index);
                 if (token.IsCancellationRequested) return;
-                var bitmap = page.Render(dpi);
+                var bitmap = page.Render(dpi, capturedRotation);
                 Dispatcher.InvokeAsync(() =>
                 {
                     _renderingPages.Remove(index);
                     if (token.IsCancellationRequested) return;
-                    if (Math.Abs(item.Scale - capturedScale) < 0.001)
+                    if (Math.Abs(item.Scale - capturedScale) < 0.001 && item.Rotation == capturedRotation)
                     {
                         item.Image = bitmap;
                     }

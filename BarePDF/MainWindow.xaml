@@ -46,6 +46,9 @@
                 <Separator/>
                 <MenuItem Header="Zoom _In" InputGestureText="Ctrl+=" Click="OnZoomInClick"/>
                 <MenuItem Header="Zoom _Out" InputGestureText="Ctrl+-" Click="OnZoomOutClick"/>
+                <Separator/>
+                <MenuItem Header="_Rotate Right" InputGestureText="Ctrl+R" Click="OnRotateRightClick"/>
+                <MenuItem Header="Rotate _Left" InputGestureText="Ctrl+Shift+R" Click="OnRotateLeftClick"/>
             </MenuItem>
             <MenuItem Header="_Help">
                 <MenuItem Header="_About BarePDF" Click="OnAboutClick"/>
@@ -104,6 +107,8 @@
         <KeyBinding Key="OemMinus" Modifiers="Control" Command="{x:Static local:MainWindow.ZoomOutCommand}"/>
         <KeyBinding Key="F" Modifiers="Control" Command="{x:Static local:MainWindow.FindCommand}"/>
         <KeyBinding Key="G" Modifiers="Control" Command="{x:Static local:MainWindow.GoToPageCommand}"/>
+        <KeyBinding Key="R" Modifiers="Control" Command="{x:Static local:MainWindow.RotateRightCommand}"/>
+        <KeyBinding Key="R" Modifiers="Control+Shift" Command="{x:Static local:MainWindow.RotateLeftCommand}"/>
         <KeyBinding Key="T" Modifiers="Control" Command="{x:Static local:MainWindow.ToggleThumbnailsCommand}"/>
         <KeyBinding Key="PageUp" Command="{x:Static local:MainWindow.PageUpCommand}"/>
         <KeyBinding Key="PageDown" Command="{x:Static local:MainWindow.PageDownCommand}"/>
