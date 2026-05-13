@@ -103,5 +103,9 @@
         <KeyBinding Key="OemMinus" Modifiers="Control" Command="{x:Static local:MainWindow.ZoomOutCommand}"/>
         <KeyBinding Key="F" Modifiers="Control" Command="{x:Static local:MainWindow.FindCommand}"/>
         <KeyBinding Key="T" Modifiers="Control" Command="{x:Static local:MainWindow.ToggleThumbnailsCommand}"/>
+        <KeyBinding Key="PageUp" Command="{x:Static local:MainWindow.PageUpCommand}"/>
+        <KeyBinding Key="PageDown" Command="{x:Static local:MainWindow.PageDownCommand}"/>
+        <KeyBinding Key="Home" Command="{x:Static local:MainWindow.GoToFirstPageCommand}"/>
+        <KeyBinding Key="End" Command="{x:Static local:MainWindow.GoToLastPageCommand}"/>
     </ui:FluentWindow.InputBindings>
 </ui:FluentWindow>

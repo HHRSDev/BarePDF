@@ -80,6 +80,26 @@ public partial class PdfViewer : UserControl
         }, DispatcherPriority.Loaded);
     }
 
+    public void ScrollPageDown() => GetListScrollViewer()?.PageDown();
+    public void ScrollPageUp() => GetListScrollViewer()?.PageUp();
+    public void ScrollToFirstPage() => GetListScrollViewer()?.ScrollToHome();
+    public void ScrollToLastPage() => GetListScrollViewer()?.ScrollToEnd();
+
+    private ScrollViewer? GetListScrollViewer() => FindVisualChild<ScrollViewer>(PageList);
+
+    private static T? FindVisualChild<T>(System.Windows.DependencyObject parent) where T : System.Windows.DependencyObject
+    {
+        var count = System.Windows.Media.VisualTreeHelper.GetChildrenCount(parent);
+        for (int i = 0; i < count; i++)
+        {
+            var child = System.Windows.Media.VisualTreeHelper.GetChild(parent, i);
+            if (child is T match) return match;
+            var nested = FindVisualChild<T>(child);
+            if (nested is not null) return nested;
+        }
+        return null;
+    }
+
     private void EnsureThumbnailRendered(ThumbnailItem item)
     {
         if (item.Thumbnail is not null) return;

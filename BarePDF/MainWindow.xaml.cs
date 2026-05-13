@@ -24,6 +24,10 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
     public static readonly RoutedCommand ZoomOutCommand = new();
     public static readonly RoutedCommand FindCommand = new();
     public static readonly RoutedCommand ToggleThumbnailsCommand = new();
+    public static readonly RoutedCommand PageUpCommand = new();
+    public static readonly RoutedCommand PageDownCommand = new();
+    public static readonly RoutedCommand GoToFirstPageCommand = new();
+    public static readonly RoutedCommand GoToLastPageCommand = new();
 
     private readonly InstanceMode _mode;
 
@@ -48,6 +52,10 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
             (_, e) => e.CanExecute = GetActiveViewer()?.HasSelection ?? false));
         CommandBindings.Add(new CommandBinding(FindCommand, (_, _) => GetActiveViewer()?.ShowFindBar()));
         CommandBindings.Add(new CommandBinding(ToggleThumbnailsCommand, (_, _) => GetActiveViewer()?.ToggleThumbnails()));
+        CommandBindings.Add(new CommandBinding(PageUpCommand, (_, _) => GetActiveViewer()?.ScrollPageUp()));
+        CommandBindings.Add(new CommandBinding(PageDownCommand, (_, _) => GetActiveViewer()?.ScrollPageDown()));
+        CommandBindings.Add(new CommandBinding(GoToFirstPageCommand, (_, _) => GetActiveViewer()?.ScrollToFirstPage()));
+        CommandBindings.Add(new CommandBinding(GoToLastPageCommand, (_, _) => GetActiveViewer()?.ScrollToLastPage()));
 
         Closed += OnWindowClosed;
     }
