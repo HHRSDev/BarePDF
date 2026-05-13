@@ -33,6 +33,7 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
     public static readonly RoutedCommand RotateLeftCommand = new();
 
     private readonly InstanceMode _mode;
+    private string? _currentDocumentPath;
 
     public MainWindow() : this(InstanceMode.Singleton) { }
 
@@ -102,7 +103,8 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
     {
         EmptyState.Visibility = Visibility.Collapsed;
         Viewer.Visibility = Visibility.Visible;
-        Title = $"{Path.GetFileName(path)} — BarePDF";
+        _currentDocumentPath = path;
+        ApplyTitle();
 
         try
         {
@@ -192,7 +194,8 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
     private void ShowEmptyState()
     {
         EmptyState.Visibility = Visibility.Visible;
-        Title = "BarePDF";
+        _currentDocumentPath = null;
+        ApplyTitle();
     }
 
     private void ShowOpenError(PdfException ex)
@@ -281,7 +284,8 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
             isFirstRun: false,
             currentMode: settings.InstanceMode,
             currentTheme: settings.Theme,
-            currentAutoFitWidth: settings.AutoFitWindowWidth ?? false)
+            currentAutoFitWidth: settings.AutoFitWindowWidth ?? false,
+            currentTitleBarMode: settings.TitleBarFilenameMode ?? TitleBarFilenameMode.Filename)
         {
             Owner = this
         };
@@ -290,16 +294,23 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
         var modeChanged = chosenMode != settings.InstanceMode;
         var themeChanged = dialog.SelectedTheme != (settings.Theme ?? AppTheme.System);
         var autoFitChanged = dialog.AutoFitWindowWidth != (settings.AutoFitWindowWidth ?? false);
-        if (!modeChanged && !themeChanged && !autoFitChanged) return;
+        var titleBarChanged = dialog.SelectedTitleBarMode != (settings.TitleBarFilenameMode ?? TitleBarFilenameMode.Filename);
+        if (!modeChanged && !themeChanged && !autoFitChanged && !titleBarChanged) return;
 
         settings.InstanceMode = chosenMode;
         settings.Theme = dialog.SelectedTheme;
         settings.AutoFitWindowWidth = dialog.AutoFitWindowWidth;
+        settings.TitleBarFilenameMode = dialog.SelectedTitleBarMode;
         SettingsStore.Save(settings);
 
         if (themeChanged)
         {
             App.ApplyTheme(dialog.SelectedTheme, this);
+        }
+
+        if (titleBarChanged)
+        {
+            ApplyTitle();
         }
 
         if (modeChanged)
@@ -376,6 +387,21 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
         SettingsStore.Save(settings);
     }
 
+    private void ApplyTitle()
+    {
+        var settings = SettingsStore.Load();
+        var mode = settings.TitleBarFilenameMode ?? TitleBarFilenameMode.Filename;
+        if (_currentDocumentPath is null || mode == TitleBarFilenameMode.Off)
+        {
+            Title = "BarePDF";
+            return;
+        }
+        var label = mode == TitleBarFilenameMode.FullPath
+            ? _currentDocumentPath
+            : Path.GetFileName(_currentDocumentPath);
+        Title = $"{label} — BarePDF";
+    }
+
     private static void AddToRecents(string path)
     {
         var settings = SettingsStore.Load();
@@ -410,14 +436,15 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
     private void OnTabSelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (!ReferenceEquals(e.OriginalSource, TabHost)) return;
-        if (TabHost.SelectedItem is TabItem t && t.Header is string title)
+        if (TabHost.SelectedItem is TabItem t)
         {
-            Title = $"{title} — BarePDF";
+            _currentDocumentPath = t.ToolTip as string;
         }
-        else if (TabHost.Items.Count == 0)
+        else
         {
-            Title = "BarePDF";
+            _currentDocumentPath = null;
         }
+        ApplyTitle();
     }
 
     private void OnCloseTabClick(object sender, RoutedEventArgs e)

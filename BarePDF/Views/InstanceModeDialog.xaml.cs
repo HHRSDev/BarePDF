@@ -16,11 +16,19 @@ public partial class InstanceModeDialog : Wpf.Ui.Controls.FluentWindow
 
     public bool AutoFitWindowWidth => AutoFitWidthCheckbox.IsChecked == true;
 
+    public TitleBarFilenameMode SelectedTitleBarMode => TitleBarModeCombo.SelectedIndex switch
+    {
+        0 => TitleBarFilenameMode.Off,
+        2 => TitleBarFilenameMode.FullPath,
+        _ => TitleBarFilenameMode.Filename,
+    };
+
     public InstanceModeDialog(
         bool isFirstRun,
         InstanceMode? currentMode,
         AppTheme? currentTheme = null,
-        bool currentAutoFitWidth = false)
+        bool currentAutoFitWidth = false,
+        TitleBarFilenameMode currentTitleBarMode = TitleBarFilenameMode.Filename)
     {
         InitializeComponent();
 
@@ -44,6 +52,12 @@ public partial class InstanceModeDialog : Wpf.Ui.Controls.FluentWindow
             _ => 0,
         };
         AutoFitWidthCheckbox.IsChecked = currentAutoFitWidth;
+        TitleBarModeCombo.SelectedIndex = currentTitleBarMode switch
+        {
+            TitleBarFilenameMode.Off => 0,
+            TitleBarFilenameMode.FullPath => 2,
+            _ => 1,
+        };
 
         UpdateOkEnabled();
         SingletonOption.Checked += (_, _) => UpdateOkEnabled();

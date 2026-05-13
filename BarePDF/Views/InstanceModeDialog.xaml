@@ -64,10 +64,21 @@
                 </ComboBox>
             </StackPanel>
 
-            <StackPanel x:Name="WindowSection" Margin="0,0,0,20">
+            <StackPanel x:Name="WindowSection" Margin="0,0,0,16">
                 <TextBlock Text="Window" FontWeight="SemiBold" Margin="0,0,0,6"/>
                 <CheckBox x:Name="AutoFitWidthCheckbox"
-                          Content="Resize window width to fit document on open"/>
+                          Content="Resize window width to fit document on open"
+                          Margin="0,0,0,8"/>
+                <TextBlock Text="Show filename in title bar"
+                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                           Margin="0,4,0,4"/>
+                <ComboBox x:Name="TitleBarModeCombo"
+                          Width="260"
+                          HorizontalAlignment="Left">
+                    <ComboBoxItem Tag="Off">Don't show filename</ComboBoxItem>
+                    <ComboBoxItem Tag="Filename">Filename</ComboBoxItem>
+                    <ComboBoxItem Tag="FullPath">Full path + filename</ComboBoxItem>
+                </ComboBox>
             </StackPanel>
 
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
