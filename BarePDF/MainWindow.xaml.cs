@@ -28,6 +28,7 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
     public static readonly RoutedCommand PageDownCommand = new();
     public static readonly RoutedCommand GoToFirstPageCommand = new();
     public static readonly RoutedCommand GoToLastPageCommand = new();
+    public static readonly RoutedCommand GoToPageCommand = new();
 
     private readonly InstanceMode _mode;
 
@@ -56,6 +57,7 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
         CommandBindings.Add(new CommandBinding(PageDownCommand, (_, _) => GetActiveViewer()?.ScrollPageDown()));
         CommandBindings.Add(new CommandBinding(GoToFirstPageCommand, (_, _) => GetActiveViewer()?.ScrollToFirstPage()));
         CommandBindings.Add(new CommandBinding(GoToLastPageCommand, (_, _) => GetActiveViewer()?.ScrollToLastPage()));
+        CommandBindings.Add(new CommandBinding(GoToPageCommand, (_, _) => OpenGoToPageDialog()));
 
         Closed += OnWindowClosed;
     }
@@ -228,6 +230,19 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
     }
 
     private void OnFindClick(object sender, RoutedEventArgs e) => GetActiveViewer()?.ShowFindBar();
+    private void OnGoToPageClick(object sender, RoutedEventArgs e) => OpenGoToPageDialog();
+
+    private void OpenGoToPageDialog()
+    {
+        var viewer = GetActiveViewer();
+        if (viewer is null || !viewer.HasDocument || viewer.PageCount == 0) return;
+
+        var dialog = new GoToPageDialog(viewer.PageCount) { Owner = this };
+        if (dialog.ShowDialog() == true && dialog.SelectedPageNumber is { } n)
+        {
+            viewer.GoToPage(n - 1);
+        }
+    }
     private void OnToggleThumbnailsClick(object sender, RoutedEventArgs e) => GetActiveViewer()?.ToggleThumbnails();
 
     private void OnFitPageClick(object sender, RoutedEventArgs e) => SetActiveZoomMode(ZoomMode.FitPage);

@@ -155,6 +155,9 @@ public partial class PdfViewer : UserControl
             ? items[0].DisplayWidth
             : 0;
 
+    public int PageCount =>
+        PageList.ItemsSource is IList<PdfPageItem> list ? list.Count : 0;
+
     public bool HasSelection
     {
         get

@@ -35,6 +35,7 @@
             </MenuItem>
             <MenuItem Header="_View">
                 <MenuItem Header="_Find..." InputGestureText="Ctrl+F" Click="OnFindClick"/>
+                <MenuItem Header="_Go to Page..." InputGestureText="Ctrl+G" Click="OnGoToPageClick"/>
                 <Separator/>
                 <MenuItem Header="_Thumbnails" InputGestureText="Ctrl+T" Click="OnToggleThumbnailsClick"/>
                 <Separator/>
@@ -102,6 +103,7 @@
         <KeyBinding Key="OemPlus" Modifiers="Control" Command="{x:Static local:MainWindow.ZoomInCommand}"/>
         <KeyBinding Key="OemMinus" Modifiers="Control" Command="{x:Static local:MainWindow.ZoomOutCommand}"/>
         <KeyBinding Key="F" Modifiers="Control" Command="{x:Static local:MainWindow.FindCommand}"/>
+        <KeyBinding Key="G" Modifiers="Control" Command="{x:Static local:MainWindow.GoToPageCommand}"/>
         <KeyBinding Key="T" Modifiers="Control" Command="{x:Static local:MainWindow.ToggleThumbnailsCommand}"/>
         <KeyBinding Key="PageUp" Command="{x:Static local:MainWindow.PageUpCommand}"/>
         <KeyBinding Key="PageDown" Command="{x:Static local:MainWindow.PageDownCommand}"/>
