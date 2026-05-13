@@ -81,7 +81,19 @@ public partial class App : Application
             _coordinator.StartListening();
         }
 
+        if (settings.AutoCheckForUpdates ?? true)
+        {
+            _ = RunStartupUpdateCheck(window);
+        }
+
         ShutdownMode = ShutdownMode.OnLastWindowClose;
+    }
+
+    private static async Task RunStartupUpdateCheck(MainWindow window)
+    {
+        var info = await Updates.UpdateChecker.CheckAsync();
+        if (info is null) return;
+        await window.Dispatcher.InvokeAsync(() => window.ShowUpdateNotice(info.Value));
     }
 
     internal static void ApplyTheme(AppTheme mode, Window window)

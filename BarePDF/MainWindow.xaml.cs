@@ -307,7 +307,8 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
             currentMode: settings.InstanceMode,
             currentTheme: settings.Theme,
             currentAutoFitWidth: settings.AutoFitWindowWidth ?? false,
-            currentTitleBarMode: settings.TitleBarFilenameMode ?? TitleBarFilenameMode.Filename)
+            currentTitleBarMode: settings.TitleBarFilenameMode ?? TitleBarFilenameMode.Filename,
+            currentAutoCheckForUpdates: settings.AutoCheckForUpdates ?? true)
         {
             Owner = this
         };
@@ -317,12 +318,14 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
         var themeChanged = dialog.SelectedTheme != (settings.Theme ?? AppTheme.System);
         var autoFitChanged = dialog.AutoFitWindowWidth != (settings.AutoFitWindowWidth ?? false);
         var titleBarChanged = dialog.SelectedTitleBarMode != (settings.TitleBarFilenameMode ?? TitleBarFilenameMode.Filename);
-        if (!modeChanged && !themeChanged && !autoFitChanged && !titleBarChanged) return;
+        var autoCheckChanged = dialog.AutoCheckForUpdates != (settings.AutoCheckForUpdates ?? true);
+        if (!modeChanged && !themeChanged && !autoFitChanged && !titleBarChanged && !autoCheckChanged) return;
 
         settings.InstanceMode = chosenMode;
         settings.Theme = dialog.SelectedTheme;
         settings.AutoFitWindowWidth = dialog.AutoFitWindowWidth;
         settings.TitleBarFilenameMode = dialog.SelectedTitleBarMode;
+        settings.AutoCheckForUpdates = dialog.AutoCheckForUpdates;
         SettingsStore.Save(settings);
 
         if (themeChanged)
@@ -443,6 +446,65 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
         list.RemoveAll(p => string.Equals(p, path, StringComparison.OrdinalIgnoreCase));
         settings.RecentFiles = list;
         SettingsStore.Save(settings);
+    }
+
+    private Updates.UpdateInfo? _pendingUpdate;
+
+    public void ShowUpdateNotice(Updates.UpdateInfo info)
+    {
+        _pendingUpdate = info;
+        UpdateNoticeText.Text = $"BarePDF {info.Tag} is available.";
+        UpdateNoticeBar.Visibility = Visibility.Visible;
+    }
+
+    private void OnDismissUpdateNoticeClick(object sender, RoutedEventArgs e)
+    {
+        UpdateNoticeBar.Visibility = Visibility.Collapsed;
+    }
+
+    private void OnViewUpdateClick(object sender, RoutedEventArgs e)
+    {
+        if (_pendingUpdate is { } info && !string.IsNullOrWhiteSpace(info.ReleaseUrl))
+        {
+            OpenInBrowser(info.ReleaseUrl);
+        }
+    }
+
+    private async void OnCheckForUpdatesClick(object sender, RoutedEventArgs e)
+    {
+        var info = await Updates.UpdateChecker.CheckAsync();
+        if (info is { } update)
+        {
+            _pendingUpdate = update;
+            var result = MessageBox.Show(this,
+                $"BarePDF {update.Tag} is available.\n\nOpen the release page in your browser?",
+                "BarePDF",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Information);
+            if (result == MessageBoxResult.Yes)
+            {
+                OpenInBrowser(update.ReleaseUrl);
+            }
+            UpdateNoticeText.Text = $"BarePDF {update.Tag} is available.";
+            UpdateNoticeBar.Visibility = Visibility.Visible;
+        }
+        else
+        {
+            MessageBox.Show(this,
+                "You're running the latest version of BarePDF.",
+                "BarePDF",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+        }
+    }
+
+    private static void OpenInBrowser(string url)
+    {
+        try
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(url) { UseShellExecute = true });
+        }
+        catch { /* user-friendly silent fail */ }
     }
 
     private void OnAboutClick(object sender, RoutedEventArgs e)

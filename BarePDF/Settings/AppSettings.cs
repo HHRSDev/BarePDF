@@ -12,4 +12,5 @@ public sealed class AppSettings
     public System.Collections.Generic.Dictionary<string, int>? PerDocumentRotation { get; set; }
     public TitleBarFilenameMode? TitleBarFilenameMode { get; set; }
     public PageDisplayMode? PageDisplayMode { get; set; }
+    public bool? AutoCheckForUpdates { get; set; }
 }

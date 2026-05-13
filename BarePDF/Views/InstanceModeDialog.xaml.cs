@@ -23,12 +23,15 @@ public partial class InstanceModeDialog : Wpf.Ui.Controls.FluentWindow
         _ => TitleBarFilenameMode.Filename,
     };
 
+    public bool AutoCheckForUpdates => AutoCheckUpdatesCheckbox.IsChecked == true;
+
     public InstanceModeDialog(
         bool isFirstRun,
         InstanceMode? currentMode,
         AppTheme? currentTheme = null,
         bool currentAutoFitWidth = false,
-        TitleBarFilenameMode currentTitleBarMode = TitleBarFilenameMode.Filename)
+        TitleBarFilenameMode currentTitleBarMode = TitleBarFilenameMode.Filename,
+        bool currentAutoCheckForUpdates = true)
     {
         InitializeComponent();
 
@@ -58,6 +61,7 @@ public partial class InstanceModeDialog : Wpf.Ui.Controls.FluentWindow
             TitleBarFilenameMode.FullPath => 2,
             _ => 1,
         };
+        AutoCheckUpdatesCheckbox.IsChecked = currentAutoCheckForUpdates;
 
         UpdateOkEnabled();
         SingletonOption.Checked += (_, _) => UpdateOkEnabled();

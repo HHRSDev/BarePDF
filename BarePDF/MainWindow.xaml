@@ -56,9 +56,35 @@
                 <MenuItem Header="Rotate _Left" InputGestureText="Ctrl+Shift+R" Click="OnRotateLeftClick"/>
             </MenuItem>
             <MenuItem Header="_Help">
+                <MenuItem Header="Check for _updates..." Click="OnCheckForUpdatesClick"/>
+                <Separator/>
                 <MenuItem Header="_About BarePDF" Click="OnAboutClick"/>
             </MenuItem>
         </Menu>
+
+        <Border x:Name="UpdateNoticeBar"
+                DockPanel.Dock="Top"
+                Visibility="Collapsed"
+                Background="{DynamicResource SystemAccentColorPrimaryBrush}"
+                Padding="12,6">
+            <DockPanel>
+                <ui:Button DockPanel.Dock="Right"
+                           Content="✕"
+                           Appearance="Transparent"
+                           Padding="6,2"
+                           Click="OnDismissUpdateNoticeClick"
+                           ToolTip="Dismiss"/>
+                <ui:Button DockPanel.Dock="Right"
+                           Content="View release"
+                           Margin="0,0,8,0"
+                           Padding="10,2"
+                           Click="OnViewUpdateClick"/>
+                <TextBlock x:Name="UpdateNoticeText"
+                           VerticalAlignment="Center"
+                           Foreground="White"
+                           FontSize="13"/>
+            </DockPanel>
+        </Border>
 
         <Grid x:Name="DocumentHost">
             <TextBlock x:Name="EmptyState"

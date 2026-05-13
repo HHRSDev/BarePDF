@@ -80,6 +80,9 @@
                     <ComboBoxItem Tag="Filename">Filename</ComboBoxItem>
                     <ComboBoxItem Tag="FullPath">Full path + filename</ComboBoxItem>
                 </ComboBox>
+                <CheckBox x:Name="AutoCheckUpdatesCheckbox"
+                          Content="Check for updates on startup"
+                          Margin="0,12,0,0"/>
             </StackPanel>
 
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
