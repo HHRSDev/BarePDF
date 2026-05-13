@@ -13,7 +13,8 @@
                  ExtendsContentIntoTitleBar="True"
                  WindowCornerPreference="Round">
     <DockPanel>
-        <ui:TitleBar DockPanel.Dock="Top" Title="BarePDF">
+        <ui:TitleBar DockPanel.Dock="Top"
+                     Title="{Binding Title, RelativeSource={RelativeSource AncestorType=Window}}">
             <ui:TitleBar.Icon>
                 <ui:ImageIcon Source="/Resources/BarePDF.ico"/>
             </ui:TitleBar.Icon>
