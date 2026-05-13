@@ -5,7 +5,7 @@
 
   <Package Name="BarePDF"
            Manufacturer="HHRSDev"
-           Version="1.0.0.0"
+           Version="1.1.0.0"
            UpgradeCode="B7C5A3F2-9D8E-4A6B-9F8C-1E2D3C4B5A60"
            Scope="perMachine"
            InstallerVersion="500"
