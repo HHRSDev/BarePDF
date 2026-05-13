@@ -107,5 +107,7 @@
         <KeyBinding Key="PageDown" Command="{x:Static local:MainWindow.PageDownCommand}"/>
         <KeyBinding Key="Home" Command="{x:Static local:MainWindow.GoToFirstPageCommand}"/>
         <KeyBinding Key="End" Command="{x:Static local:MainWindow.GoToLastPageCommand}"/>
+        <KeyBinding Key="Home" Modifiers="Control" Command="{x:Static local:MainWindow.GoToFirstPageCommand}"/>
+        <KeyBinding Key="End" Modifiers="Control" Command="{x:Static local:MainWindow.GoToLastPageCommand}"/>
     </ui:FluentWindow.InputBindings>
 </ui:FluentWindow>
