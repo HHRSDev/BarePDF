@@ -17,6 +17,9 @@ public partial class PdfViewer : UserControl
     private const double MinScale = 0.1;
     private const double MaxScale = 8.0;
 
+    private int _currentPageIndex;
+    private bool _scrollSubscribed;
+
     private PdfDocument? _document;
     private CancellationTokenSource? _renderCts;
     private readonly HashSet<int> _renderingPages = new();
@@ -84,6 +87,112 @@ public partial class PdfViewer : UserControl
     public void ScrollPageUp() => GetListScrollViewer()?.PageUp();
     public void ScrollToFirstPage() => GetListScrollViewer()?.ScrollToHome();
     public void ScrollToLastPage() => GetListScrollViewer()?.ScrollToEnd();
+
+    public int CurrentPageIndex
+    {
+        get => _currentPageIndex;
+        private set
+        {
+            var clamped = Math.Max(0, Math.Min(value, Math.Max(0, PageCount - 1)));
+            if (_currentPageIndex == clamped) return;
+            _currentPageIndex = clamped;
+            UpdatePageIndicator();
+        }
+    }
+
+    public void GoToPreviousPage()
+    {
+        if (CurrentPageIndex > 0) GoToPage(CurrentPageIndex - 1);
+    }
+
+    public void GoToNextPage()
+    {
+        if (CurrentPageIndex < PageCount - 1) GoToPage(CurrentPageIndex + 1);
+    }
+
+    private void UpdatePageIndicator()
+    {
+        var total = PageCount;
+        if (total == 0)
+        {
+            PageIndicator.Text = "0 / 0";
+            PageJumpBox.Text = string.Empty;
+            return;
+        }
+        var n = _currentPageIndex + 1;
+        PageIndicator.Text = $"{n} / {total}";
+        if (!PageJumpBox.IsKeyboardFocused)
+        {
+            PageJumpBox.Text = n.ToString();
+        }
+    }
+
+    private void UpdateCurrentPageFromScroll()
+    {
+        if (PageList.ItemsSource is not IList<PdfPageItem> items || items.Count == 0) return;
+        var sv = GetListScrollViewer();
+        if (sv is null) return;
+
+        var center = sv.VerticalOffset + sv.ViewportHeight / 2.0;
+        const double topPadding = 20.0;
+        const double itemMargin = 12.0;
+        var accum = topPadding;
+        for (int i = 0; i < items.Count; i++)
+        {
+            var h = items[i].DisplayHeight;
+            if (center <= accum + h + itemMargin / 2.0)
+            {
+                CurrentPageIndex = i;
+                return;
+            }
+            accum += h + itemMargin;
+        }
+        CurrentPageIndex = items.Count - 1;
+    }
+
+    private void OnPageListScrollChanged(object sender, System.Windows.Controls.ScrollChangedEventArgs e)
+    {
+        if (e.VerticalChange != 0 || e.ExtentHeightChange != 0)
+        {
+            UpdateCurrentPageFromScroll();
+        }
+    }
+
+    private void OnRibbonFirstPage(object sender, RoutedEventArgs e) => ScrollToFirstPage();
+    private void OnRibbonPrevPage(object sender, RoutedEventArgs e) => GoToPreviousPage();
+    private void OnRibbonNextPage(object sender, RoutedEventArgs e) => GoToNextPage();
+    private void OnRibbonLastPage(object sender, RoutedEventArgs e) => ScrollToLastPage();
+
+    private void OnPageJumpKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter)
+        {
+            CommitPageJump();
+            e.Handled = true;
+        }
+        else if (e.Key == Key.Escape)
+        {
+            UpdatePageIndicator();
+            Keyboard.ClearFocus();
+            e.Handled = true;
+        }
+    }
+
+    private void OnPageJumpLostFocus(object sender, RoutedEventArgs e) => UpdatePageIndicator();
+
+    private void CommitPageJump()
+    {
+        if (int.TryParse(PageJumpBox.Text, out var n) && n >= 1 && n <= PageCount)
+        {
+            GoToPage(n - 1);
+            CurrentPageIndex = n - 1;
+        }
+        else
+        {
+            System.Media.SystemSounds.Beep.Play();
+            UpdatePageIndicator();
+        }
+    }
 
     private ScrollViewer? GetListScrollViewer() => FindVisualChild<ScrollViewer>(PageList);
 
@@ -275,6 +384,18 @@ public partial class PdfViewer : UserControl
             if (_document is null) return;
             _zoomScale = ComputeFitScale(_zoomMode);
             ApplyScaleToItems();
+
+            if (!_scrollSubscribed)
+            {
+                var sv = GetListScrollViewer();
+                if (sv is not null)
+                {
+                    sv.ScrollChanged += OnPageListScrollChanged;
+                    _scrollSubscribed = true;
+                }
+            }
+            _currentPageIndex = 0;
+            UpdatePageIndicator();
         }, System.Windows.Threading.DispatcherPriority.Loaded);
     }
 
@@ -437,6 +558,9 @@ public partial class PdfViewer : UserControl
 
         _document?.Dispose();
         _document = null;
+
+        _currentPageIndex = 0;
+        UpdatePageIndicator();
     }
 
     private void ScheduleSearch()
