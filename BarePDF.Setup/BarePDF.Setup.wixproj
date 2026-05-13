@@ -1,0 +1,20 @@
+<Project Sdk="WixToolset.Sdk/5.0.2">
+
+  <PropertyGroup>
+    <OutputName>BarePDF</OutputName>
+    <OutputType>Package</OutputType>
+    <InstallerPlatform>x64</InstallerPlatform>
+    <DefineConstants>PublishDir=$(MSBuildThisFileDirectory)..\publish\</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="WixToolset.UI.wixext" Version="5.0.2" />
+    <PackageReference Include="WixToolset.Util.wixext" Version="5.0.2" />
+  </ItemGroup>
+
+  <Target Name="PublishBarePDF" BeforeTargets="BeforeBuild">
+    <Exec Command="dotnet publish &quot;$(MSBuildThisFileDirectory)..\BarePDF\BarePDF.csproj&quot; -c Release -r win-x64 --self-contained -o &quot;$(MSBuildThisFileDirectory)..\publish&quot;"
+          WorkingDirectory="$(MSBuildThisFileDirectory).." />
+  </Target>
+
+</Project>

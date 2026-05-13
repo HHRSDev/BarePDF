@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui"
+     xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util">
+
+  <Package Name="BarePDF"
+           Manufacturer="HHRSDev"
+           Version="1.0.0.0"
+           UpgradeCode="B7C5A3F2-9D8E-4A6B-9F8C-1E2D3C4B5A60"
+           Scope="perMachine"
+           InstallerVersion="500"
+           Compressed="yes">
+
+    <SummaryInformation Description="BarePDF — a fast, clean, distraction-free PDF viewer." />
+
+    <MajorUpgrade DowngradeErrorMessage="A newer version of BarePDF is already installed." />
+    <MediaTemplate EmbedCab="yes" />
+
+    <Icon Id="BarePDF.ico" SourceFile="$(var.PublishDir)\BarePDF.exe" />
+    <Property Id="ARPPRODUCTICON" Value="BarePDF.ico" />
+    <Property Id="ARPHELPLINK" Value="https://github.com/HHRSDev/BarePDF" />
+    <Property Id="ARPURLINFOABOUT" Value="https://github.com/HHRSDev/BarePDF" />
+
+    <StandardDirectory Id="ProgramFiles64Folder">
+      <Directory Id="INSTALLFOLDER" Name="BarePDF" />
+    </StandardDirectory>
+
+    <StandardDirectory Id="ProgramMenuFolder" />
+
+    <Feature Id="Main" Title="BarePDF" Level="1">
+      <Files Include="$(var.PublishDir)\**" Directory="INSTALLFOLDER" />
+      <ComponentRef Id="StartMenuShortcut" />
+      <ComponentRef Id="PdfFileAssociation" />
+    </Feature>
+
+    <Component Id="StartMenuShortcut" Directory="ProgramMenuFolder" Guid="B7C5A3F2-9D8E-4A6B-9F8C-1E2D3C4B5A61">
+      <Shortcut Id="BarePdfShortcut"
+                Name="BarePDF"
+                Description="A fast, clean, distraction-free PDF viewer"
+                Target="[INSTALLFOLDER]BarePDF.exe"
+                WorkingDirectory="INSTALLFOLDER" />
+      <RegistryValue Root="HKCU"
+                     Key="Software\HHRSDev\BarePDF"
+                     Name="installed"
+                     Type="integer"
+                     Value="1"
+                     KeyPath="yes" />
+    </Component>
+
+    <Component Id="PdfFileAssociation" Directory="INSTALLFOLDER" Guid="B7C5A3F2-9D8E-4A6B-9F8C-1E2D3C4B5A62">
+      <!-- BarePDF.Document ProgID -->
+      <RegistryValue Root="HKLM" Key="Software\Classes\BarePDF.Document"
+                     Type="string" Value="PDF Document" KeyPath="yes" />
+      <RegistryValue Root="HKLM" Key="Software\Classes\BarePDF.Document\DefaultIcon"
+                     Type="string" Value="[INSTALLFOLDER]BarePDF.exe,0" />
+      <RegistryValue Root="HKLM" Key="Software\Classes\BarePDF.Document\shell\open\command"
+                     Type="string" Value="&quot;[INSTALLFOLDER]BarePDF.exe&quot; &quot;%1&quot;" />
+
+      <!-- Register BarePDF.exe as an application that handles .pdf -->
+      <RegistryValue Root="HKLM" Key="Software\Classes\Applications\BarePDF.exe\shell\open\command"
+                     Type="string" Value="&quot;[INSTALLFOLDER]BarePDF.exe&quot; &quot;%1&quot;" />
+      <RegistryValue Root="HKLM" Key="Software\Classes\Applications\BarePDF.exe\SupportedTypes"
+                     Name=".pdf" Type="string" Value="" />
+      <RegistryValue Root="HKLM" Key="Software\Classes\Applications\BarePDF.exe"
+                     Name="FriendlyAppName" Type="string" Value="BarePDF" />
+
+      <!-- Show BarePDF in .pdf's "Open with" submenu and Default Apps picker -->
+      <RegistryValue Root="HKLM" Key="Software\Classes\.pdf\OpenWithProgids"
+                     Name="BarePDF.Document" Type="string" Value="" />
+    </Component>
+
+    <!-- Final-page checkbox: open Windows Default Apps settings so the user can pick BarePDF -->
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1" />
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT"
+              Value="Open Windows Default apps to make BarePDF the default for PDFs" />
+    <Property Id="WixShellExecTarget" Value="ms-settings:defaultapps?registeredAppUser=BarePDF" />
+    <CustomAction Id="LaunchDefaultAppsSettings"
+                  DllEntry="WixShellExec"
+                  Impersonate="yes"
+                  BinaryRef="Wix4UtilCA_X64" />
+
+    <ui:WixUI Id="WixUI_InstallDir" InstallDirectory="INSTALLFOLDER" />
+
+    <UI>
+      <Publish Dialog="ExitDialog"
+               Control="Finish"
+               Event="DoAction"
+               Value="LaunchDefaultAppsSettings"
+               Condition="WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 and NOT Installed" />
+    </UI>
+
+  </Package>
+</Wix>
