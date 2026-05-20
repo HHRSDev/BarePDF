@@ -25,6 +25,10 @@
                 <MenuItem x:Name="RecentMenu" Header="Open _Recent">
                     <MenuItem Header="(no recent files)" IsEnabled="False"/>
                 </MenuItem>
+                <Separator/>
+                <MenuItem Header="_Save..." InputGestureText="Ctrl+S" Click="OnSaveClick"/>
+                <MenuItem Header="Save _As..." InputGestureText="Ctrl+Shift+S" Click="OnSaveAsClick"/>
+                <Separator/>
                 <MenuItem Header="_Close" InputGestureText="Ctrl+W" Click="OnCloseDocumentClick"/>
                 <Separator/>
                 <MenuItem Header="_Print..." InputGestureText="Ctrl+P" Click="OnPrintClick"/>
@@ -130,6 +134,8 @@
         <KeyBinding Key="O" Modifiers="Control" Command="{x:Static local:MainWindow.OpenCommand}"/>
         <KeyBinding Key="W" Modifiers="Control" Command="{x:Static local:MainWindow.CloseDocumentCommand}"/>
         <KeyBinding Key="P" Modifiers="Control" Command="{x:Static local:MainWindow.PrintCommand}"/>
+        <KeyBinding Key="S" Modifiers="Control" Command="{x:Static local:MainWindow.SaveCommand}"/>
+        <KeyBinding Key="S" Modifiers="Control+Shift" Command="{x:Static local:MainWindow.SaveAsCommand}"/>
         <KeyBinding Key="D0" Modifiers="Control" Command="{x:Static local:MainWindow.FitPageCommand}"/>
         <KeyBinding Key="D1" Modifiers="Control" Command="{x:Static local:MainWindow.FitPageHeightCommand}"/>
         <KeyBinding Key="D2" Modifiers="Control" Command="{x:Static local:MainWindow.FitWidthCommand}"/>

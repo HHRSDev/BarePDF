@@ -16,6 +16,8 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
     public static readonly RoutedCommand OpenCommand = new();
     public static readonly RoutedCommand CloseDocumentCommand = new();
     public static readonly RoutedCommand PrintCommand = new();
+    public static readonly RoutedCommand SaveCommand = new();
+    public static readonly RoutedCommand SaveAsCommand = new();
     public static readonly RoutedCommand FitPageCommand = new();
     public static readonly RoutedCommand FitPageHeightCommand = new();
     public static readonly RoutedCommand FitWidthCommand = new();
@@ -46,6 +48,8 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
         CommandBindings.Add(new CommandBinding(OpenCommand, (_, _) => OnOpenClick(this, new RoutedEventArgs())));
         CommandBindings.Add(new CommandBinding(CloseDocumentCommand, (_, _) => OnCloseDocumentClick(this, new RoutedEventArgs())));
         CommandBindings.Add(new CommandBinding(PrintCommand, (_, _) => OnPrintClick(this, new RoutedEventArgs())));
+        CommandBindings.Add(new CommandBinding(SaveCommand, (_, _) => OnSaveClick(this, new RoutedEventArgs())));
+        CommandBindings.Add(new CommandBinding(SaveAsCommand, (_, _) => OnSaveAsClick(this, new RoutedEventArgs())));
         CommandBindings.Add(new CommandBinding(FitPageCommand, (_, _) => SetActiveZoomMode(ZoomMode.FitPage)));
         CommandBindings.Add(new CommandBinding(FitPageHeightCommand, (_, _) => SetActiveZoomMode(ZoomMode.FitPageHeight)));
         CommandBindings.Add(new CommandBinding(FitWidthCommand, (_, _) => SetActiveZoomMode(ZoomMode.FitWidth)));
@@ -213,18 +217,73 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
 
     private async void OnOpenClick(object sender, RoutedEventArgs e)
     {
+        var settings = SettingsStore.Load();
         var dialog = new OpenFileDialog
         {
             Filter = "PDF files (*.pdf)|*.pdf|All files (*.*)|*.*",
-            Title = "Open PDF"
+            Title = "Open PDF",
+            InitialDirectory = settings.LastOpenDirectory ?? string.Empty,
         };
         if (dialog.ShowDialog(this) == true)
         {
+            RememberDirectory(d => d.LastOpenDirectory = Path.GetDirectoryName(dialog.FileName));
             await OpenPdf(dialog.FileName);
         }
     }
 
     private void OnCloseDocumentClick(object sender, RoutedEventArgs e) => CloseDocument();
+
+    private void OnSaveClick(object sender, RoutedEventArgs e) => SaveCopy(asNew: false);
+
+    private void OnSaveAsClick(object sender, RoutedEventArgs e) => SaveCopy(asNew: true);
+
+    private void SaveCopy(bool asNew)
+    {
+        var source = _currentDocumentPath;
+        if (string.IsNullOrEmpty(source) || !File.Exists(source))
+        {
+            return;
+        }
+
+        var settings = SettingsStore.Load();
+        var initial = asNew
+            ? settings.LastSaveAsDirectory ?? settings.LastOpenDirectory
+            : settings.LastSaveDirectory ?? settings.LastOpenDirectory;
+
+        var dialog = new SaveFileDialog
+        {
+            Filter = "PDF files (*.pdf)|*.pdf|All files (*.*)|*.*",
+            Title = asNew ? "Save As" : "Save",
+            FileName = Path.GetFileName(source),
+            InitialDirectory = initial ?? string.Empty,
+        };
+        if (dialog.ShowDialog(this) != true) return;
+
+        try
+        {
+            File.Copy(source, dialog.FileName, overwrite: true);
+            RememberDirectory(s =>
+            {
+                if (asNew) s.LastSaveAsDirectory = Path.GetDirectoryName(dialog.FileName);
+                else s.LastSaveDirectory = Path.GetDirectoryName(dialog.FileName);
+            });
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(this,
+                $"Could not save the PDF.\n\n{ex.Message}",
+                "BarePDF",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+        }
+    }
+
+    private static void RememberDirectory(Action<AppSettings> mutate)
+    {
+        var s = SettingsStore.Load();
+        mutate(s);
+        SettingsStore.Save(s);
+    }
 
     private void OnPrintClick(object sender, RoutedEventArgs e)
     {

@@ -13,4 +13,7 @@ public sealed class AppSettings
     public TitleBarFilenameMode? TitleBarFilenameMode { get; set; }
     public PageDisplayMode? PageDisplayMode { get; set; }
     public bool? AutoCheckForUpdates { get; set; }
+    public string? LastOpenDirectory { get; set; }
+    public string? LastSaveDirectory { get; set; }
+    public string? LastSaveAsDirectory { get; set; }
 }
