@@ -645,8 +645,19 @@ public partial class PdfViewer : UserControl
     public void ShowPrintPreview(Window owner)
     {
         if (_document is null) return;
-        var preview = new PrintPreviewWindow(_document, owner);
-        preview.ShowDialog();
+        try
+        {
+            var preview = new PrintPreviewWindow(_document, owner);
+            preview.ShowDialog();
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(owner,
+                $"Print Preview failed to open.\n\n{ex.GetType().Name}: {ex.Message}",
+                "BarePDF",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+        }
     }
 
     public void Print(Window owner)

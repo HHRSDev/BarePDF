@@ -16,6 +16,7 @@ public partial class App : Application
     {
         base.OnStartup(e);
         ShutdownMode = ShutdownMode.OnExplicitShutdown;
+        DispatcherUnhandledException += OnDispatcherUnhandledException;
 
         var settings = SettingsStore.Load();
         ApplyThemeWithoutWatcher(settings.Theme ?? AppTheme.System);
@@ -146,6 +147,20 @@ public partial class App : Application
         _coordinator?.Dispose();
         _coordinator = null;
         base.OnExit(e);
+    }
+
+    private static void OnDispatcherUnhandledException(object sender, System.Windows.Threading.DispatcherUnhandledExceptionEventArgs e)
+    {
+        try
+        {
+            MessageBox.Show(
+                $"An unexpected error occurred:\n\n{e.Exception.GetType().Name}: {e.Exception.Message}\n\n{e.Exception.StackTrace}",
+                "BarePDF",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+        }
+        catch { /* nothing we can do if even MessageBox fails */ }
+        e.Handled = true; // keep the app alive so the user can see the message and continue
     }
 
     private static string? ResolvePdfPath(string[] args)
