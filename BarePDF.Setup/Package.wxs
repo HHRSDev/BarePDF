@@ -5,7 +5,7 @@
 
   <Package Name="BarePDF"
            Manufacturer="HHRSDev"
-           Version="1.1.1.0"
+           Version="1.1.2.0"
            UpgradeCode="B7C5A3F2-9D8E-4A6B-9F8C-1E2D3C4B5A60"
            Scope="perMachine"
            InstallerVersion="500"
@@ -55,6 +55,12 @@
                      Type="string" Value="[INSTALLFOLDER]BarePDF.exe,0" />
       <RegistryValue Root="HKLM" Key="Software\Classes\BarePDF.Document\shell\open\command"
                      Type="string" Value="&quot;[INSTALLFOLDER]BarePDF.exe&quot; &quot;%1&quot;" />
+
+      <!-- Print Preview shell verb (right-click .pdf > Print preview) -->
+      <RegistryValue Root="HKLM" Key="Software\Classes\BarePDF.Document\shell\printpreview"
+                     Type="string" Value="Print pre&amp;view" />
+      <RegistryValue Root="HKLM" Key="Software\Classes\BarePDF.Document\shell\printpreview\command"
+                     Type="string" Value="&quot;[INSTALLFOLDER]BarePDF.exe&quot; /printpreview &quot;%1&quot;" />
 
       <!-- Register BarePDF.exe as an application that handles .pdf -->
       <RegistryValue Root="HKLM" Key="Software\Classes\Applications\BarePDF.exe\shell\open\command"

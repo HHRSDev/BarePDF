@@ -20,6 +20,15 @@ public partial class App : Application
         var settings = SettingsStore.Load();
         ApplyThemeWithoutWatcher(settings.Theme ?? AppTheme.System);
 
+        // Print-preview shell verb: launch straight into PrintPreviewWindow as the
+        // only top-level window. Bypasses instance coordination so an already-open
+        // BarePDF viewer is not disturbed.
+        if (TryGetPrintPreviewPath(e.Args, out var previewPath))
+        {
+            StartPrintPreviewOnlyMode(previewPath);
+            return;
+        }
+
         if (settings.InstanceMode is null)
         {
             var dialog = new InstanceModeDialog(isFirstRun: true, currentMode: null);
@@ -149,5 +158,79 @@ public partial class App : Application
             }
         }
         return null;
+    }
+
+    private static bool TryGetPrintPreviewPath(string[] args, out string path)
+    {
+        var requested = false;
+        string? found = null;
+        foreach (var arg in args)
+        {
+            if (string.Equals(arg, "/printpreview", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(arg, "-printpreview", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(arg, "--printpreview", StringComparison.OrdinalIgnoreCase))
+            {
+                requested = true;
+            }
+            else if (!string.IsNullOrWhiteSpace(arg) && File.Exists(arg))
+            {
+                found = Path.GetFullPath(arg);
+            }
+        }
+        if (requested && found is not null)
+        {
+            path = found;
+            return true;
+        }
+        path = string.Empty;
+        return false;
+    }
+
+    private void StartPrintPreviewOnlyMode(string path)
+    {
+        Pdfium.PdfDocument? document = null;
+        string? attemptedPassword = null;
+        var hasAttempted = false;
+        while (document is null)
+        {
+            try
+            {
+                document = Pdfium.PdfDocument.Open(path, attemptedPassword);
+            }
+            catch (Pdfium.PdfException ex) when (ex.ErrorCode == 4)
+            {
+                var prompt = new PasswordPromptDialog(Path.GetFileName(path), retry: hasAttempted);
+                if (prompt.ShowDialog() != true)
+                {
+                    Shutdown();
+                    return;
+                }
+                attemptedPassword = prompt.Password;
+                hasAttempted = true;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    $"Could not open this PDF.\n\n{ex.Message}",
+                    "BarePDF",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+                Shutdown();
+                return;
+            }
+        }
+
+        var preview = new PrintPreviewWindow(document, null!)
+        {
+            Title = $"Print Preview — {Path.GetFileName(path)}",
+        };
+        preview.Closed += (_, _) =>
+        {
+            document.Dispose();
+            Shutdown();
+        };
+        MainWindow = preview;
+        preview.Show();
+        ShutdownMode = ShutdownMode.OnLastWindowClose;
     }
 }
