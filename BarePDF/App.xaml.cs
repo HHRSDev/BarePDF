@@ -188,49 +188,59 @@ public partial class App : Application
 
     private void StartPrintPreviewOnlyMode(string path)
     {
-        Pdfium.PdfDocument? document = null;
-        string? attemptedPassword = null;
-        var hasAttempted = false;
-        while (document is null)
+        try
         {
-            try
+            Pdfium.PdfDocument? document = null;
+            string? attemptedPassword = null;
+            var hasAttempted = false;
+            while (document is null)
             {
-                document = Pdfium.PdfDocument.Open(path, attemptedPassword);
-            }
-            catch (Pdfium.PdfException ex) when (ex.ErrorCode == 4)
-            {
-                var prompt = new PasswordPromptDialog(Path.GetFileName(path), retry: hasAttempted);
-                if (prompt.ShowDialog() != true)
+                try
                 {
+                    document = Pdfium.PdfDocument.Open(path, attemptedPassword);
+                }
+                catch (Pdfium.PdfException ex) when (ex.ErrorCode == 4)
+                {
+                    var prompt = new PasswordPromptDialog(Path.GetFileName(path), retry: hasAttempted);
+                    if (prompt.ShowDialog() != true)
+                    {
+                        Shutdown();
+                        return;
+                    }
+                    attemptedPassword = prompt.Password;
+                    hasAttempted = true;
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(
+                        $"Could not open this PDF.\n\n{ex.Message}",
+                        "BarePDF",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Error);
                     Shutdown();
                     return;
                 }
-                attemptedPassword = prompt.Password;
-                hasAttempted = true;
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(
-                    $"Could not open this PDF.\n\n{ex.Message}",
-                    "BarePDF",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Error);
-                Shutdown();
-                return;
-            }
-        }
 
-        var preview = new PrintPreviewWindow(document, null!)
+            var preview = new PrintPreviewWindow(document);
+            preview.Title = $"Print Preview — {Path.GetFileName(path)}";
+            preview.Closed += (_, _) =>
+            {
+                document.Dispose();
+                Shutdown();
+            };
+            MainWindow = preview;
+            ShutdownMode = ShutdownMode.OnLastWindowClose;
+            preview.Show();
+        }
+        catch (Exception ex)
         {
-            Title = $"Print Preview — {Path.GetFileName(path)}",
-        };
-        preview.Closed += (_, _) =>
-        {
-            document.Dispose();
+            MessageBox.Show(
+                $"Print Preview failed to start.\n\n{ex.GetType().Name}: {ex.Message}",
+                "BarePDF",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
             Shutdown();
-        };
-        MainWindow = preview;
-        preview.Show();
-        ShutdownMode = ShutdownMode.OnLastWindowClose;
+        }
     }
 }

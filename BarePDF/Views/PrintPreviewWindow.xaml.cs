@@ -7,10 +7,10 @@ public partial class PrintPreviewWindow : Wpf.Ui.Controls.FluentWindow
 {
     private readonly PdfDocument _document;
 
-    public PrintPreviewWindow(PdfDocument document, Window owner)
+    public PrintPreviewWindow(PdfDocument document, Window? owner = null)
     {
         _document = document;
-        Owner = owner;
+        if (owner is not null) Owner = owner;
         InitializeComponent();
 
         var pageSize = new Size(8.5 * 96.0, 11.0 * 96.0);
