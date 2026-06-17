@@ -1,10 +1,14 @@
+using System.Collections.Generic;
 using System.Windows;
+using System.Windows.Media.Imaging;
 using BarePDF.Pdfium;
 
 namespace BarePDF.Views;
 
 public partial class PrintPreviewWindow : Wpf.Ui.Controls.FluentWindow
 {
+    private const double PreviewDpi = 72.0;
+
     private readonly PdfDocument _document;
 
     public PrintPreviewWindow(PdfDocument document, Window? owner = null)
@@ -13,8 +17,18 @@ public partial class PrintPreviewWindow : Wpf.Ui.Controls.FluentWindow
         if (owner is not null) Owner = owner;
         InitializeComponent();
 
-        var pageSize = new Size(8.5 * 96.0, 11.0 * 96.0);
-        DocViewer.Document = new PdfPrintPaginator(document, pageSize, renderDpi: 96.0);
+        PageList.ItemsSource = RenderPages(document);
+    }
+
+    private static IReadOnlyList<BitmapSource> RenderPages(PdfDocument document)
+    {
+        var list = new List<BitmapSource>(document.PageCount);
+        for (int i = 0; i < document.PageCount; i++)
+        {
+            using var page = document.GetPage(i);
+            list.Add(page.Render(PreviewDpi));
+        }
+        return list;
     }
 
     private void OnPrintClick(object sender, RoutedEventArgs e)
