@@ -16,6 +16,8 @@ public partial class InstanceModeDialog : Wpf.Ui.Controls.FluentWindow
 
     public bool AutoFitWindowWidth => AutoFitWidthCheckbox.IsChecked == true;
 
+    public bool AutoFitWindowHeight => AutoFitHeightCheckbox.IsChecked == true;
+
     public TitleBarFilenameMode SelectedTitleBarMode => TitleBarModeCombo.SelectedIndex switch
     {
         0 => TitleBarFilenameMode.Off,
@@ -30,6 +32,7 @@ public partial class InstanceModeDialog : Wpf.Ui.Controls.FluentWindow
         InstanceMode? currentMode,
         AppTheme? currentTheme = null,
         bool currentAutoFitWidth = false,
+        bool currentAutoFitHeight = false,
         TitleBarFilenameMode currentTitleBarMode = TitleBarFilenameMode.Filename,
         bool currentAutoCheckForUpdates = true)
     {
@@ -55,6 +58,7 @@ public partial class InstanceModeDialog : Wpf.Ui.Controls.FluentWindow
             _ => 0,
         };
         AutoFitWidthCheckbox.IsChecked = currentAutoFitWidth;
+        AutoFitHeightCheckbox.IsChecked = currentAutoFitHeight;
         TitleBarModeCombo.SelectedIndex = currentTitleBarMode switch
         {
             TitleBarFilenameMode.Off => 0,

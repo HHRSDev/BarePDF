@@ -33,13 +33,19 @@ public partial class PrintPreviewWindow : Wpf.Ui.Controls.FluentWindow
 
     private void OnPrintClick(object sender, RoutedEventArgs e)
     {
-        var dialog = new System.Windows.Controls.PrintDialog();
+        var dialog = new System.Windows.Controls.PrintDialog
+        {
+            UserPageRangeEnabled = true,
+            MinPage = 1,
+            MaxPage = (uint)Math.Max(1, _document.PageCount),
+        };
         if (dialog.ShowDialog() != true) return;
 
         try
         {
             var pageSize = new Size(dialog.PrintableAreaWidth, dialog.PrintableAreaHeight);
-            var paginator = new PdfPrintPaginator(_document, pageSize);
+            var (firstPage, pageCount) = ResolveRange(dialog, _document.PageCount);
+            var paginator = new PdfPrintPaginator(_document, pageSize, firstPage: firstPage, pageCount: pageCount);
             dialog.PrintDocument(paginator, "BarePDF Document");
             Close();
         }
@@ -54,4 +60,16 @@ public partial class PrintPreviewWindow : Wpf.Ui.Controls.FluentWindow
     }
 
     private void OnCloseClick(object sender, RoutedEventArgs e) => Close();
+
+    private static (int firstPage, int pageCount) ResolveRange(
+        System.Windows.Controls.PrintDialog dialog,
+        int totalPages)
+    {
+        if (dialog.PageRangeSelection != System.Windows.Controls.PageRangeSelection.UserPages)
+            return (0, totalPages);
+
+        var from = Math.Max(1, dialog.PageRange.PageFrom);
+        var to = Math.Min(totalPages, Math.Max(from, dialog.PageRange.PageTo));
+        return (from - 1, to - from + 1);
+    }
 }

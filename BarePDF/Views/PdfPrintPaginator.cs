@@ -9,17 +9,27 @@ internal sealed class PdfPrintPaginator : DocumentPaginator, IDocumentPaginatorS
 {
     private readonly PdfDocument _document;
     private readonly double _renderDpi;
+    private readonly int _firstPage;
+    private readonly int _pageCount;
     private Size _pageSize;
 
-    public PdfPrintPaginator(PdfDocument document, Size pageSize, double renderDpi = 300.0)
+    public PdfPrintPaginator(
+        PdfDocument document,
+        Size pageSize,
+        double renderDpi = 300.0,
+        int firstPage = 0,
+        int? pageCount = null)
     {
         _document = document;
         _pageSize = pageSize;
         _renderDpi = renderDpi;
+        _firstPage = Math.Clamp(firstPage, 0, Math.Max(0, document.PageCount - 1));
+        var remaining = document.PageCount - _firstPage;
+        _pageCount = pageCount.HasValue ? Math.Clamp(pageCount.Value, 0, remaining) : remaining;
     }
 
     public override bool IsPageCountValid => true;
-    public override int PageCount => _document.PageCount;
+    public override int PageCount => _pageCount;
     public override IDocumentPaginatorSource Source => this;
     DocumentPaginator IDocumentPaginatorSource.DocumentPaginator => this;
 
@@ -31,7 +41,7 @@ internal sealed class PdfPrintPaginator : DocumentPaginator, IDocumentPaginatorS
 
     public override DocumentPage GetPage(int pageNumber)
     {
-        using var page = _document.GetPage(pageNumber);
+        using var page = _document.GetPage(_firstPage + pageNumber);
 
         var pageWidth = page.WidthPoints * 96.0 / 72.0;
         var pageHeight = page.HeightPoints * 96.0 / 72.0;

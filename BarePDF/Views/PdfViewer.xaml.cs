@@ -396,6 +396,11 @@ public partial class PdfViewer : UserControl
             ? items[0].DisplayWidth
             : 0;
 
+    public double FirstPageDisplayHeight =>
+        PageList.ItemsSource is IList<PdfPageItem> items2 && items2.Count > 0
+            ? items2[0].DisplayHeight
+            : 0;
+
     public int PageCount =>
         PageList.ItemsSource is IList<PdfPageItem> list ? list.Count : 0;
 
@@ -664,13 +669,19 @@ public partial class PdfViewer : UserControl
     {
         if (_document is null) return;
 
-        var dialog = new System.Windows.Controls.PrintDialog();
+        var dialog = new System.Windows.Controls.PrintDialog
+        {
+            UserPageRangeEnabled = true,
+            MinPage = 1,
+            MaxPage = (uint)Math.Max(1, _document.PageCount),
+        };
         if (dialog.ShowDialog() != true) return;
 
         try
         {
             var pageSize = new Size(dialog.PrintableAreaWidth, dialog.PrintableAreaHeight);
-            var paginator = new PdfPrintPaginator(_document, pageSize);
+            var (firstPage, pageCount) = ResolveRange(dialog, _document.PageCount);
+            var paginator = new PdfPrintPaginator(_document, pageSize, firstPage: firstPage, pageCount: pageCount);
             dialog.PrintDocument(paginator, "BarePDF Document");
         }
         catch (Exception ex)
@@ -681,6 +692,18 @@ public partial class PdfViewer : UserControl
                 MessageBoxButton.OK,
                 MessageBoxImage.Error);
         }
+    }
+
+    private static (int firstPage, int pageCount) ResolveRange(
+        System.Windows.Controls.PrintDialog dialog,
+        int totalPages)
+    {
+        if (dialog.PageRangeSelection != System.Windows.Controls.PageRangeSelection.UserPages)
+            return (0, totalPages);
+
+        var from = Math.Max(1, dialog.PageRange.PageFrom);
+        var to = Math.Min(totalPages, Math.Max(from, dialog.PageRange.PageTo));
+        return (from - 1, to - from + 1);
     }
 
     public void Close()

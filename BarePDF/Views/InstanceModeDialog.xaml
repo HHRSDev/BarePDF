@@ -70,6 +70,9 @@
                 <CheckBox x:Name="AutoFitWidthCheckbox"
                           Content="Resize window width to fit document on open"
                           Margin="0,0,0,8"/>
+                <CheckBox x:Name="AutoFitHeightCheckbox"
+                          Content="Resize window to full screen height for portrait documents"
+                          Margin="0,0,0,8"/>
                 <TextBlock Text="Show filename in title bar"
                            Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                            Margin="0,4,0,4"/>

@@ -1,0 +1,54 @@
+<ui:FluentWindow x:Class="BarePDF.Views.AboutDialog"
+                 xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                 xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+                 Title="About BarePDF"
+                 Icon="/Resources/BarePDF.ico"
+                 Width="460" SizeToContent="Height"
+                 WindowStartupLocation="CenterOwner"
+                 ResizeMode="NoResize"
+                 ShowInTaskbar="False"
+                 WindowBackdropType="Mica"
+                 ExtendsContentIntoTitleBar="True"
+                 WindowCornerPreference="Round">
+    <DockPanel>
+        <ui:TitleBar DockPanel.Dock="Top"
+                     Title="{Binding Title, RelativeSource={RelativeSource AncestorType=Window}}">
+            <ui:TitleBar.Icon>
+                <ui:ImageIcon Source="/Resources/BarePDF.ico"/>
+            </ui:TitleBar.Icon>
+        </ui:TitleBar>
+        <StackPanel Margin="24,8,24,24">
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                <Image Source="/Resources/BarePDF.ico" Width="48" Height="48" Margin="0,0,16,0"
+                       VerticalAlignment="Center"/>
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="BarePDF" FontSize="22" FontWeight="SemiBold"/>
+                    <TextBlock x:Name="VersionText"
+                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                </StackPanel>
+            </StackPanel>
+
+            <TextBlock Text="A fast, clean, distraction-free PDF viewer for Windows."
+                       TextWrapping="Wrap" Margin="0,0,0,4"/>
+            <TextBlock Text="No ads. No cloud. No AI. Just PDFs."
+                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                       TextWrapping="Wrap" Margin="0,0,0,16"/>
+
+            <TextBlock Margin="0,0,0,4">
+                <Run Text="Project: "/>
+                <Hyperlink x:Name="RepoLink" Click="OnRepoClick">
+                    <Run Text="github.com/HHRSDev/BarePDF"/>
+                </Hyperlink>
+            </TextBlock>
+            <TextBlock Text="Renderer: PDFium (via PDFiumCore)"
+                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                       Margin="0,0,0,16"/>
+
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <ui:Button Content="OK" Width="88" IsDefault="True" IsCancel="True"
+                           Appearance="Primary" Click="OnOkClick"/>
+            </StackPanel>
+        </StackPanel>
+    </DockPanel>
+</ui:FluentWindow>

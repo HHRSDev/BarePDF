@@ -37,6 +37,7 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
 
     private readonly InstanceMode _mode;
     private string? _currentDocumentPath;
+    private bool _hasAutoFitRun;
 
     public MainWindow() : this(InstanceMode.Singleton) { }
 
@@ -116,7 +117,7 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
         {
             await Viewer.OpenAsync(path);
             AddToRecents(path);
-            ApplyAutoFitWindowWidth(Viewer);
+            ApplyAutoFitOnFirstOpen(Viewer);
             SyncDisplayModeMenu();
         }
         catch (OperationCanceledException)
@@ -130,19 +131,37 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
         }
     }
 
-    private void ApplyAutoFitWindowWidth(PdfViewer viewer)
+    private void ApplyAutoFitOnFirstOpen(PdfViewer viewer)
     {
+        // One-shot per window — don't bounce the size on every subsequent open
+        // in Singleton mode (and Tabbed mode is skipped entirely below).
+        if (_hasAutoFitRun) return;
         if (_mode == InstanceMode.Tabbed) return;
         if (WindowState != WindowState.Normal) return;
+
         var settings = SettingsStore.Load();
-        if (settings.AutoFitWindowWidth != true) return;
-
         var pageWidth = viewer.FirstPageDisplayWidth;
-        if (pageWidth <= 0) return;
+        var pageHeight = viewer.FirstPageDisplayHeight;
+        if (pageWidth <= 0 || pageHeight <= 0) return;
 
-        const double chrome = 80;
-        var maxWidth = SystemParameters.WorkArea.Width;
-        Width = Math.Min(pageWidth + chrome, maxWidth);
+        var workArea = SystemParameters.WorkArea;
+        var anyApplied = false;
+
+        if (settings.AutoFitWindowWidth == true)
+        {
+            const double widthChrome = 80;
+            Width = Math.Min(pageWidth + widthChrome, workArea.Width);
+            anyApplied = true;
+        }
+
+        if (settings.AutoFitWindowHeight == true && pageHeight > pageWidth)
+        {
+            Height = workArea.Height;
+            Top = workArea.Top;
+            anyApplied = true;
+        }
+
+        if (anyApplied) _hasAutoFitRun = true;
     }
 
     private async Task AddTab(string path)
@@ -366,6 +385,7 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
             currentMode: settings.InstanceMode,
             currentTheme: settings.Theme,
             currentAutoFitWidth: settings.AutoFitWindowWidth ?? false,
+            currentAutoFitHeight: settings.AutoFitWindowHeight ?? false,
             currentTitleBarMode: settings.TitleBarFilenameMode ?? TitleBarFilenameMode.Filename,
             currentAutoCheckForUpdates: settings.AutoCheckForUpdates ?? true)
         {
@@ -376,13 +396,15 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
         var modeChanged = chosenMode != settings.InstanceMode;
         var themeChanged = dialog.SelectedTheme != (settings.Theme ?? AppTheme.System);
         var autoFitChanged = dialog.AutoFitWindowWidth != (settings.AutoFitWindowWidth ?? false);
+        var autoFitHeightChanged = dialog.AutoFitWindowHeight != (settings.AutoFitWindowHeight ?? false);
         var titleBarChanged = dialog.SelectedTitleBarMode != (settings.TitleBarFilenameMode ?? TitleBarFilenameMode.Filename);
         var autoCheckChanged = dialog.AutoCheckForUpdates != (settings.AutoCheckForUpdates ?? true);
-        if (!modeChanged && !themeChanged && !autoFitChanged && !titleBarChanged && !autoCheckChanged) return;
+        if (!modeChanged && !themeChanged && !autoFitChanged && !autoFitHeightChanged && !titleBarChanged && !autoCheckChanged) return;
 
         settings.InstanceMode = chosenMode;
         settings.Theme = dialog.SelectedTheme;
         settings.AutoFitWindowWidth = dialog.AutoFitWindowWidth;
+        settings.AutoFitWindowHeight = dialog.AutoFitWindowHeight;
         settings.TitleBarFilenameMode = dialog.SelectedTitleBarMode;
         settings.AutoCheckForUpdates = dialog.AutoCheckForUpdates;
         SettingsStore.Save(settings);
@@ -568,12 +590,7 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
 
     private void OnAboutClick(object sender, RoutedEventArgs e)
     {
-        MessageBox.Show(
-            this,
-            "BarePDF\n\nA fast, clean, distraction-free PDF viewer for Windows.\nNo ads. No cloud. No AI. Just PDFs.",
-            "About BarePDF",
-            MessageBoxButton.OK,
-            MessageBoxImage.Information);
+        new AboutDialog(this).ShowDialog();
     }
 
     private void OnTabSelectionChanged(object sender, SelectionChangedEventArgs e)

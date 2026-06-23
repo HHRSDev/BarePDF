@@ -5,7 +5,7 @@
 
   <Package Name="BarePDF"
            Manufacturer="HHRSDev"
-           Version="1.1.5.0"
+           Version="1.2.0.0"
            UpgradeCode="B7C5A3F2-9D8E-4A6B-9F8C-1E2D3C4B5A60"
            Scope="perMachine"
            InstallerVersion="500"
@@ -101,6 +101,17 @@
                      Value="Software\BarePDF\Capabilities" />
     </Component>
 
+    <!-- Detect whether the user already has BarePDF set as the default .pdf handler.
+         Windows stores the user's choice under HKCU; if ProgId is BarePDF.Document
+         we skip the "make default" exit-page prompt entirely. -->
+    <Property Id="BAREPDF_CURRENT_PDF_PROGID">
+      <RegistrySearch Id="DetectDefaultPdfProgId"
+                      Root="HKCU"
+                      Key="Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\.pdf\UserChoice"
+                      Name="ProgId"
+                      Type="raw" />
+    </Property>
+
     <!-- Final-page checkbox: open Windows Default Apps settings so the user can pick BarePDF -->
     <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1" />
     <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT"
@@ -110,6 +121,15 @@
                   DllEntry="WixShellExec"
                   Impersonate="yes"
                   BinaryRef="Wix4UtilCA_X64" />
+
+    <!-- When BarePDF is already the default, hide the exit-page checkbox by clearing
+         its text and unsetting it. WixUI omits the checkbox row when the text is empty. -->
+    <SetProperty Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="0" After="AppSearch"
+                 Sequence="ui"
+                 Condition="BAREPDF_CURRENT_PDF_PROGID = &quot;BarePDF.Document&quot;" />
+    <SetProperty Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="" After="AppSearch"
+                 Sequence="ui"
+                 Condition="BAREPDF_CURRENT_PDF_PROGID = &quot;BarePDF.Document&quot;" />
 
     <ui:WixUI Id="WixUI_InstallDir" InstallDirectory="INSTALLFOLDER" />
     <WixVariable Id="WixUILicenseRtf" Value="License.rtf" />
