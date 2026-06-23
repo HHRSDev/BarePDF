@@ -145,21 +145,30 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
         if (pageWidth <= 0 || pageHeight <= 0) return;
 
         var workArea = SystemParameters.WorkArea;
+        var portrait = pageHeight > pageWidth;
         var anyApplied = false;
-
-        if (settings.AutoFitWindowWidth == true)
-        {
-            const double widthChrome = 80;
-            Width = Math.Min(pageWidth + widthChrome, workArea.Width);
-            anyApplied = true;
-        }
 
         // Default ON for portrait — small WPF default window heights make portrait
         // PDFs unreadable out of the box. Users can untick in Settings > Window.
-        if (settings.AutoFitWindowHeight != false && pageHeight > pageWidth)
+        // When this path fires it also widens the window to match the page aspect
+        // ratio, so Fit Page mode fills both dimensions cleanly.
+        if (settings.AutoFitWindowHeight != false && portrait)
         {
+            const double heightChrome = 80; // titlebar + menu + status + borders
+            const double widthChrome = 30;  // borders + vertical scrollbar
+            var innerHeight = Math.Max(1, workArea.Height - heightChrome);
+            var aspectInnerWidth = innerHeight * (pageWidth / pageHeight);
+
             Height = workArea.Height;
             Top = workArea.Top;
+            Width = Math.Min(aspectInnerWidth + widthChrome, workArea.Width);
+            Left = workArea.Left + Math.Max(0, (workArea.Width - Width) / 2);
+            anyApplied = true;
+        }
+        else if (settings.AutoFitWindowWidth == true)
+        {
+            const double widthChrome = 80;
+            Width = Math.Min(pageWidth + widthChrome, workArea.Width);
             anyApplied = true;
         }
 
