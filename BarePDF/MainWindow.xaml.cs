@@ -154,7 +154,9 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
             anyApplied = true;
         }
 
-        if (settings.AutoFitWindowHeight == true && pageHeight > pageWidth)
+        // Default ON for portrait — small WPF default window heights make portrait
+        // PDFs unreadable out of the box. Users can untick in Settings > Window.
+        if (settings.AutoFitWindowHeight != false && pageHeight > pageWidth)
         {
             Height = workArea.Height;
             Top = workArea.Top;
@@ -385,7 +387,7 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
             currentMode: settings.InstanceMode,
             currentTheme: settings.Theme,
             currentAutoFitWidth: settings.AutoFitWindowWidth ?? false,
-            currentAutoFitHeight: settings.AutoFitWindowHeight ?? false,
+            currentAutoFitHeight: settings.AutoFitWindowHeight ?? true,
             currentTitleBarMode: settings.TitleBarFilenameMode ?? TitleBarFilenameMode.Filename,
             currentAutoCheckForUpdates: settings.AutoCheckForUpdates ?? true)
         {
@@ -396,7 +398,7 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
         var modeChanged = chosenMode != settings.InstanceMode;
         var themeChanged = dialog.SelectedTheme != (settings.Theme ?? AppTheme.System);
         var autoFitChanged = dialog.AutoFitWindowWidth != (settings.AutoFitWindowWidth ?? false);
-        var autoFitHeightChanged = dialog.AutoFitWindowHeight != (settings.AutoFitWindowHeight ?? false);
+        var autoFitHeightChanged = dialog.AutoFitWindowHeight != (settings.AutoFitWindowHeight ?? true);
         var titleBarChanged = dialog.SelectedTitleBarMode != (settings.TitleBarFilenameMode ?? TitleBarFilenameMode.Filename);
         var autoCheckChanged = dialog.AutoCheckForUpdates != (settings.AutoCheckForUpdates ?? true);
         if (!modeChanged && !themeChanged && !autoFitChanged && !autoFitHeightChanged && !titleBarChanged && !autoCheckChanged) return;
