@@ -67,7 +67,26 @@ public partial class PrintPreviewWindow : Wpf.Ui.Controls.FluentWindow
         UpdateZoomIndicator();
         UpdatePageIndicator();
 
-        await Dispatcher.InvokeAsync(HookScroller, System.Windows.Threading.DispatcherPriority.Loaded);
+        // Defer until WPF has laid out the ListBox so ItemContainerGenerator
+        // has materialized the initial visible containers. Then hook scroll
+        // tracking and render whatever's in view.
+        await Dispatcher.InvokeAsync(() =>
+        {
+            HookScroller();
+            RenderVisibleItems();
+        }, System.Windows.Threading.DispatcherPriority.Loaded);
+    }
+
+    private void RenderVisibleItems()
+    {
+        if (_items is null || _items.Count == 0) return;
+        for (int i = 0; i < _items.Count; i++)
+        {
+            if (PageList.ItemContainerGenerator.ContainerFromIndex(i) is not null)
+            {
+                EnsureRendered(_items[i]);
+            }
+        }
     }
 
     private void HookScroller()
@@ -150,6 +169,7 @@ public partial class PrintPreviewWindow : Wpf.Ui.Controls.FluentWindow
     {
         if (e.VerticalChange == 0 && e.ViewportHeightChange == 0) return;
         UpdateCurrentPageFromScroll();
+        RenderVisibleItems();
     }
 
     private void UpdateCurrentPageFromScroll()
