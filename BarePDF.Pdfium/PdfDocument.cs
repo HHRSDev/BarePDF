@@ -20,6 +20,8 @@ public sealed class PdfDocument : IDisposable
 
     public int PageCount { get; }
 
+    public long FileSize => _bytes?.LongLength ?? 0;
+
     public static PdfDocument Open(string path, string? password = null)
     {
         ArgumentException.ThrowIfNullOrEmpty(path);
@@ -76,6 +78,101 @@ public sealed class PdfDocument : IDisposable
         }
         if (page is null) throw new PdfException("Failed to load page", 0);
         return new PdfPage(_handle, page);
+    }
+
+    public PdfMetadata GetMetadata()
+    {
+        if (_handle is null) throw new ObjectDisposedException(nameof(PdfDocument));
+
+        int versionRaw = 0;
+        lock (PdfNative.SyncRoot)
+        {
+            fpdfview.FPDF_GetFileVersion(_handle, ref versionRaw);
+        }
+        var versionStr = versionRaw > 0
+            ? $"{versionRaw / 10}.{versionRaw % 10}"
+            : "Unknown";
+
+        return new PdfMetadata(
+            Title: ReadMetaText("Title"),
+            Author: ReadMetaText("Author"),
+            Subject: ReadMetaText("Subject"),
+            Keywords: ReadMetaText("Keywords"),
+            Creator: ReadMetaText("Creator"),
+            Producer: ReadMetaText("Producer"),
+            CreationDate: ParsePdfDate(ReadMetaText("CreationDate")),
+            ModificationDate: ParsePdfDate(ReadMetaText("ModDate")),
+            PdfVersion: versionStr);
+    }
+
+    private string? ReadMetaText(string tag)
+    {
+        if (_handle is null) return null;
+
+        ulong size;
+        lock (PdfNative.SyncRoot)
+        {
+            size = fpdf_doc.FPDF_GetMetaText(_handle, tag, IntPtr.Zero, 0);
+        }
+        if (size <= 2) return null; // null terminator only
+
+        var buf = Marshal.AllocHGlobal((int)size);
+        try
+        {
+            lock (PdfNative.SyncRoot)
+            {
+                fpdf_doc.FPDF_GetMetaText(_handle, tag, buf, size);
+            }
+            // PDFium writes UTF-16LE with a trailing null wchar.
+            var text = Marshal.PtrToStringUni(buf, (int)(size / 2) - 1);
+            return string.IsNullOrWhiteSpace(text) ? null : text;
+        }
+        finally
+        {
+            Marshal.FreeHGlobal(buf);
+        }
+    }
+
+    private static DateTimeOffset? ParsePdfDate(string? raw)
+    {
+        if (string.IsNullOrEmpty(raw)) return null;
+
+        // PDF date format: D:YYYYMMDDHHmmSSOHH'mm' (O = +, -, or Z; trailing parts optional)
+        var s = raw.StartsWith("D:") ? raw[2..] : raw;
+        if (s.Length < 4) return null;
+
+        try
+        {
+            int year = int.Parse(s[..4]);
+            int month = s.Length >= 6 ? int.Parse(s.Substring(4, 2)) : 1;
+            int day = s.Length >= 8 ? int.Parse(s.Substring(6, 2)) : 1;
+            int hour = s.Length >= 10 ? int.Parse(s.Substring(8, 2)) : 0;
+            int min = s.Length >= 12 ? int.Parse(s.Substring(10, 2)) : 0;
+            int sec = s.Length >= 14 ? int.Parse(s.Substring(12, 2)) : 0;
+
+            var offset = TimeSpan.Zero;
+            if (s.Length >= 15)
+            {
+                var tz = s[14];
+                if (tz == 'Z') offset = TimeSpan.Zero;
+                else if ((tz == '+' || tz == '-') && s.Length >= 17)
+                {
+                    int oh = int.Parse(s.Substring(15, 2));
+                    int om = 0;
+                    // Format uses apostrophes: +HH'mm'
+                    var rest = s[17..].Replace("'", "");
+                    if (rest.Length >= 2) int.TryParse(rest[..2], out om);
+                    var span = new TimeSpan(oh, om, 0);
+                    offset = tz == '-' ? -span : span;
+                }
+            }
+
+            return new DateTimeOffset(year, month, day, hour, min, sec, offset);
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     public void Dispose()

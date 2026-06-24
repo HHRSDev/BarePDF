@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using BarePDF.Pdfium;
 using BarePDF.Settings;
@@ -18,6 +19,7 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
     public static readonly RoutedCommand PrintCommand = new();
     public static readonly RoutedCommand SaveCommand = new();
     public static readonly RoutedCommand SaveAsCommand = new();
+    public static readonly RoutedCommand DocumentPropertiesCommand = new();
     public static readonly RoutedCommand FitPageCommand = new();
     public static readonly RoutedCommand FitPageHeightCommand = new();
     public static readonly RoutedCommand FitWidthCommand = new();
@@ -34,6 +36,8 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
     public static readonly RoutedCommand RotateRightCommand = new();
     public static readonly RoutedCommand RotateLeftCommand = new();
     public static readonly RoutedCommand ToggleSinglePageCommand = new();
+    public static readonly RoutedCommand TogglePanModeCommand = new();
+    public static readonly RoutedCommand ToggleBookmarkCommand = new();
 
     private readonly InstanceMode _mode;
     private string? _currentDocumentPath;
@@ -51,6 +55,7 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
         CommandBindings.Add(new CommandBinding(PrintCommand, (_, _) => OnPrintClick(this, new RoutedEventArgs())));
         CommandBindings.Add(new CommandBinding(SaveCommand, (_, _) => OnSaveClick(this, new RoutedEventArgs())));
         CommandBindings.Add(new CommandBinding(SaveAsCommand, (_, _) => OnSaveAsClick(this, new RoutedEventArgs())));
+        CommandBindings.Add(new CommandBinding(DocumentPropertiesCommand, (_, _) => OnDocumentPropertiesClick(this, new RoutedEventArgs())));
         CommandBindings.Add(new CommandBinding(FitPageCommand, (_, _) => SetActiveZoomMode(ZoomMode.FitPage)));
         CommandBindings.Add(new CommandBinding(FitPageHeightCommand, (_, _) => SetActiveZoomMode(ZoomMode.FitPageHeight)));
         CommandBindings.Add(new CommandBinding(FitWidthCommand, (_, _) => SetActiveZoomMode(ZoomMode.FitWidth)));
@@ -70,6 +75,10 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
         CommandBindings.Add(new CommandBinding(RotateRightCommand, (_, _) => GetActiveViewer()?.RotateRight()));
         CommandBindings.Add(new CommandBinding(RotateLeftCommand, (_, _) => GetActiveViewer()?.RotateLeft()));
         CommandBindings.Add(new CommandBinding(ToggleSinglePageCommand, (_, _) => ToggleSinglePage()));
+        CommandBindings.Add(new CommandBinding(TogglePanModeCommand,
+            (_, _) => TogglePanMode(),
+            (_, e) => e.CanExecute = Keyboard.FocusedElement is not TextBoxBase));
+        CommandBindings.Add(new CommandBinding(ToggleBookmarkCommand, (_, _) => ToggleBookmarkOnCurrentPage()));
 
         Closed += OnWindowClosed;
     }
@@ -329,11 +338,98 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
         viewer.ShowPrintPreview(this);
     }
 
+    private void OnDocumentPropertiesClick(object sender, RoutedEventArgs e)
+    {
+        var viewer = GetActiveViewer();
+        if (viewer?.Document is null) return;
+        new DocumentPropertiesDialog(viewer.Document, viewer.CurrentPath, this).ShowDialog();
+    }
+
     private void OnFindClick(object sender, RoutedEventArgs e) => GetActiveViewer()?.ShowFindBar();
     private void OnGoToPageClick(object sender, RoutedEventArgs e) => OpenGoToPageDialog();
     private void OnRotateRightClick(object sender, RoutedEventArgs e) => GetActiveViewer()?.RotateRight();
     private void OnRotateLeftClick(object sender, RoutedEventArgs e) => GetActiveViewer()?.RotateLeft();
     private void OnSinglePageClick(object sender, RoutedEventArgs e) => ToggleSinglePage();
+
+    private void OnPanModeClick(object sender, RoutedEventArgs e) => TogglePanMode();
+
+    private void ToggleBookmarkOnCurrentPage()
+    {
+        var viewer = GetActiveViewer();
+        if (viewer is null || !viewer.HasDocument || viewer.CurrentPath is null) return;
+
+        var page = viewer.CurrentPageIndex;
+        var s = SettingsStore.Load();
+        s.UserBookmarks ??= new System.Collections.Generic.Dictionary<string, System.Collections.Generic.List<int>>();
+        if (!s.UserBookmarks.TryGetValue(viewer.CurrentPath, out var pages))
+        {
+            pages = new System.Collections.Generic.List<int>();
+            s.UserBookmarks[viewer.CurrentPath] = pages;
+        }
+        if (pages.Contains(page))
+        {
+            pages.Remove(page);
+            if (pages.Count == 0) s.UserBookmarks.Remove(viewer.CurrentPath);
+        }
+        else
+        {
+            pages.Add(page);
+            pages.Sort();
+        }
+        SettingsStore.Save(s);
+    }
+
+    private void OnBookmarksMenuOpened(object sender, RoutedEventArgs e)
+    {
+        BookmarksMenu.Items.Clear();
+
+        var viewer = GetActiveViewer();
+        var hasDocument = viewer is { HasDocument: true } && viewer.CurrentPath is not null;
+        var page = viewer?.CurrentPageIndex ?? 0;
+        var path = viewer?.CurrentPath;
+
+        var settings = SettingsStore.Load();
+        var pages = (path is not null && settings.UserBookmarks is { } map && map.TryGetValue(path, out var list))
+            ? list
+            : null;
+        var isBookmarked = pages?.Contains(page) == true;
+
+        var toggle = new MenuItem
+        {
+            Header = isBookmarked ? "Remove Bookmark on Current Page" : "Add Bookmark on Current Page",
+            InputGestureText = "Ctrl+B",
+            IsEnabled = hasDocument,
+        };
+        toggle.Click += (_, _) => ToggleBookmarkOnCurrentPage();
+        BookmarksMenu.Items.Add(toggle);
+
+        BookmarksMenu.Items.Add(new Separator());
+
+        if (pages is null || pages.Count == 0)
+        {
+            BookmarksMenu.Items.Add(new MenuItem { Header = "(no bookmarks)", IsEnabled = false });
+            return;
+        }
+
+        for (int i = 0; i < pages.Count; i++)
+        {
+            var p = pages[i];
+            var item = new MenuItem
+            {
+                Header = $"_{(i + 1) % 10} Page {p + 1}",
+                Tag = p,
+            };
+            item.Click += OnBookmarkItemClick;
+            BookmarksMenu.Items.Add(item);
+        }
+    }
+
+    private void OnBookmarkItemClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is not MenuItem mi || mi.Tag is not int pageIndex) return;
+        var viewer = GetActiveViewer();
+        viewer?.GoToPage(pageIndex);
+    }
 
     private void ToggleSinglePage()
     {
@@ -350,6 +446,15 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
     {
         var viewer = GetActiveViewer();
         SinglePageMenuItem.IsChecked = viewer?.DisplayMode == PageDisplayMode.SinglePage;
+        PanModeMenuItem.IsChecked = viewer?.IsPanMode == true;
+    }
+
+    private void TogglePanMode()
+    {
+        var viewer = GetActiveViewer();
+        if (viewer is null) return;
+        viewer.TogglePanMode();
+        SyncDisplayModeMenu();
     }
 
     private void OpenGoToPageDialog()

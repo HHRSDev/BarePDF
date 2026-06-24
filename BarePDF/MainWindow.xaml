@@ -31,6 +31,8 @@
                 <Separator/>
                 <MenuItem Header="_Close" InputGestureText="Ctrl+W" Click="OnCloseDocumentClick"/>
                 <Separator/>
+                <MenuItem Header="P_roperties..." InputGestureText="Ctrl+D" Click="OnDocumentPropertiesClick"/>
+                <Separator/>
                 <MenuItem Header="_Print..." InputGestureText="Ctrl+P" Click="OnPrintClick"/>
                 <MenuItem Header="Print Pre_view..." Click="OnPrintPreviewClick"/>
                 <Separator/>
@@ -47,6 +49,17 @@
                           Header="_Single Page Mode"
                           IsCheckable="True"
                           Click="OnSinglePageClick"/>
+                <MenuItem x:Name="PanModeMenuItem"
+                          Header="_Hand Tool"
+                          InputGestureText="H"
+                          IsCheckable="True"
+                          Click="OnPanModeClick"/>
+                <Separator/>
+                <MenuItem x:Name="BookmarksMenu"
+                          Header="_Bookmarks"
+                          SubmenuOpened="OnBookmarksMenuOpened">
+                    <MenuItem Header="Add Bookmark on Current Page" InputGestureText="Ctrl+B"/>
+                </MenuItem>
                 <Separator/>
                 <MenuItem Header="Fit _Page" InputGestureText="Ctrl+0" Click="OnFitPageClick"/>
                 <MenuItem Header="Fit Page _Height" InputGestureText="Ctrl+1" Click="OnFitPageHeightClick"/>
@@ -136,6 +149,7 @@
         <KeyBinding Key="P" Modifiers="Control" Command="{x:Static local:MainWindow.PrintCommand}"/>
         <KeyBinding Key="S" Modifiers="Control" Command="{x:Static local:MainWindow.SaveCommand}"/>
         <KeyBinding Key="S" Modifiers="Control+Shift" Command="{x:Static local:MainWindow.SaveAsCommand}"/>
+        <KeyBinding Key="D" Modifiers="Control" Command="{x:Static local:MainWindow.DocumentPropertiesCommand}"/>
         <KeyBinding Key="D0" Modifiers="Control" Command="{x:Static local:MainWindow.FitPageCommand}"/>
         <KeyBinding Key="D1" Modifiers="Control" Command="{x:Static local:MainWindow.FitPageHeightCommand}"/>
         <KeyBinding Key="D2" Modifiers="Control" Command="{x:Static local:MainWindow.FitWidthCommand}"/>
@@ -147,6 +161,8 @@
         <KeyBinding Key="R" Modifiers="Control" Command="{x:Static local:MainWindow.RotateRightCommand}"/>
         <KeyBinding Key="R" Modifiers="Control+Shift" Command="{x:Static local:MainWindow.RotateLeftCommand}"/>
         <KeyBinding Key="T" Modifiers="Control" Command="{x:Static local:MainWindow.ToggleThumbnailsCommand}"/>
+        <KeyBinding Key="H" Command="{x:Static local:MainWindow.TogglePanModeCommand}"/>
+        <KeyBinding Key="B" Modifiers="Control" Command="{x:Static local:MainWindow.ToggleBookmarkCommand}"/>
         <KeyBinding Key="PageUp" Command="{x:Static local:MainWindow.PageUpCommand}"/>
         <KeyBinding Key="PageDown" Command="{x:Static local:MainWindow.PageDownCommand}"/>
         <KeyBinding Key="Home" Command="{x:Static local:MainWindow.GoToFirstPageCommand}"/>

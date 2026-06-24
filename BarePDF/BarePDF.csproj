@@ -15,7 +15,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
     <ApplicationIcon>Resources\BarePDF.ico</ApplicationIcon>
-    <Version>1.2.2</Version>
+    <Version>1.3.0</Version>
   </PropertyGroup>
 
   <ItemGroup>

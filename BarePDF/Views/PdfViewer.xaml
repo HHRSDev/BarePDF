@@ -30,7 +30,19 @@
                  VirtualizingPanel.CacheLength="2,2"
                  VirtualizingPanel.CacheLengthUnit="Page"
                  KeyboardNavigation.DirectionalNavigation="None"
-                 PreviewMouseWheel="OnPageListPreviewMouseWheel">
+                 PreviewMouseWheel="OnPageListPreviewMouseWheel"
+                 PreviewMouseLeftButtonDown="OnPageListPreviewMouseLeftButtonDown"
+                 PreviewMouseMove="OnPageListPreviewMouseMove"
+                 PreviewMouseLeftButtonUp="OnPageListPreviewMouseLeftButtonUp">
+            <ListBox.Style>
+                <Style TargetType="ListBox" BasedOn="{StaticResource {x:Type ListBox}}">
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsPanMode, RelativeSource={RelativeSource AncestorType={x:Type local:PdfViewer}}}" Value="True">
+                            <Setter Property="Cursor" Value="Hand"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </ListBox.Style>
             <ListBox.ItemsPanel>
                 <ItemsPanelTemplate>
                     <VirtualizingStackPanel Orientation="Vertical"/>
@@ -59,13 +71,22 @@
                             BorderBrush="#222"
                             BorderThickness="1"
                             SnapsToDevicePixels="True"
-                            Cursor="IBeam"
                             Width="{Binding DisplayWidth}"
                             Height="{Binding DisplayHeight}"
                             DataContextChanged="OnPageContainerDataContextChanged"
                             MouseLeftButtonDown="OnPageMouseDown"
                             MouseMove="OnPageMouseMove"
                             MouseLeftButtonUp="OnPageMouseUp">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="Cursor" Value="IBeam"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsPanMode, RelativeSource={RelativeSource AncestorType={x:Type local:PdfViewer}}}" Value="True">
+                                        <Setter Property="Cursor" Value="Hand"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
                         <Grid>
                             <Image Source="{Binding Image}" Stretch="Uniform" IsHitTestVisible="False"/>
                             <local:PageFindLayer

@@ -33,6 +33,30 @@ public partial class PdfViewer : UserControl
     private int _selectionAnchor = -1;
     private bool _isSelecting;
 
+    private bool _isPanning;
+    private Point _panStartPoint;
+    private double _panStartHOffset;
+    private double _panStartVOffset;
+
+    public static readonly DependencyProperty IsPanModeProperty =
+        DependencyProperty.Register(nameof(IsPanMode), typeof(bool), typeof(PdfViewer),
+            new PropertyMetadata(false, OnIsPanModeChanged));
+
+    public bool IsPanMode
+    {
+        get => (bool)GetValue(IsPanModeProperty);
+        set => SetValue(IsPanModeProperty, value);
+    }
+
+    public event EventHandler? PanModeChanged;
+
+    private static void OnIsPanModeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        if (d is PdfViewer v) v.PanModeChanged?.Invoke(v, EventArgs.Empty);
+    }
+
+    public void TogglePanMode() => IsPanMode = !IsPanMode;
+
     private ZoomMode _zoomMode = ZoomMode.FitPage;
     private double _zoomScale = 1.0;
 
@@ -388,6 +412,8 @@ public partial class PdfViewer : UserControl
     }
 
     public bool HasDocument => _document is not null;
+    public PdfDocument? Document => _document;
+    public string? CurrentPath => _currentPath;
     public ZoomMode ZoomMode => _zoomMode;
     public double ZoomScale => _zoomScale;
 
@@ -1048,6 +1074,43 @@ public partial class PdfViewer : UserControl
         if (!_isSelecting) return;
         if (sender is FrameworkElement fe) fe.ReleaseMouseCapture();
         _isSelecting = false;
+    }
+
+    private void OnPageListPreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (!IsPanMode) return;
+        var sv = GetListScrollViewer();
+        if (sv is null) return;
+
+        _isPanning = true;
+        _panStartPoint = e.GetPosition(PageList);
+        _panStartHOffset = sv.HorizontalOffset;
+        _panStartVOffset = sv.VerticalOffset;
+        PageList.CaptureMouse();
+        e.Handled = true;
+    }
+
+    private void OnPageListPreviewMouseMove(object sender, MouseEventArgs e)
+    {
+        if (!_isPanning) return;
+        var sv = GetListScrollViewer();
+        if (sv is null) return;
+
+        var current = e.GetPosition(PageList);
+        var dx = current.X - _panStartPoint.X;
+        var dy = current.Y - _panStartPoint.Y;
+
+        sv.ScrollToHorizontalOffset(_panStartHOffset - dx);
+        sv.ScrollToVerticalOffset(_panStartVOffset - dy);
+        e.Handled = true;
+    }
+
+    private void OnPageListPreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+    {
+        if (!_isPanning) return;
+        _isPanning = false;
+        PageList.ReleaseMouseCapture();
+        e.Handled = true;
     }
 
     private void OnPageContainerDataContextChanged(object sender, DependencyPropertyChangedEventArgs e)

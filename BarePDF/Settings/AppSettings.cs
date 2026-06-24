@@ -11,6 +11,7 @@ public sealed class AppSettings
     public bool? ShowThumbnails { get; set; }
     public System.Collections.Generic.List<string>? RecentFiles { get; set; }
     public System.Collections.Generic.Dictionary<string, int>? PerDocumentRotation { get; set; }
+    public System.Collections.Generic.Dictionary<string, System.Collections.Generic.List<int>>? UserBookmarks { get; set; }
     public TitleBarFilenameMode? TitleBarFilenameMode { get; set; }
     public PageDisplayMode? PageDisplayMode { get; set; }
     public bool? AutoCheckForUpdates { get; set; }
