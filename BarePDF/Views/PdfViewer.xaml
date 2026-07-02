@@ -88,7 +88,8 @@
                             </Style>
                         </Border.Style>
                         <Grid>
-                            <Image Source="{Binding Image}" Stretch="Uniform" IsHitTestVisible="False"/>
+                            <Image Source="{Binding Image}" Stretch="Uniform" IsHitTestVisible="False"
+                                   RenderOptions.BitmapScalingMode="HighQuality"/>
                             <local:PageFindLayer
                                 MatchRects="{Binding MatchRects}"
                                 CurrentMatchRects="{Binding CurrentMatchRects}"

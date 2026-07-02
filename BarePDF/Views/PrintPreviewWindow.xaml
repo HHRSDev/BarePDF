@@ -119,7 +119,8 @@
                             Width="{Binding DisplayWidth}"
                             Height="{Binding DisplayHeight}"
                             DataContextChanged="OnPageContainerDataContextChanged">
-                        <Image Source="{Binding Image}" Stretch="Uniform" IsHitTestVisible="False"/>
+                        <Image Source="{Binding Image}" Stretch="Uniform" IsHitTestVisible="False"
+                               RenderOptions.BitmapScalingMode="HighQuality"/>
                     </Border>
                 </DataTemplate>
             </ListBox.ItemTemplate>

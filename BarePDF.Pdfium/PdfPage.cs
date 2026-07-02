@@ -93,7 +93,11 @@ public sealed class PdfPage : IDisposable
         return new PdfTextPage(handle, charCount);
     }
 
-    public BitmapSource Render(double dpi, int rotation = 0)
+    public BitmapSource Render(
+        double dpi,
+        int rotation = 0,
+        double? bitmapDensityDpi = null,
+        bool useLcdText = false)
     {
         if (_handle is null) throw new ObjectDisposedException(nameof(PdfPage));
         if (dpi <= 0) throw new ArgumentOutOfRangeException(nameof(dpi));
@@ -105,6 +109,19 @@ public sealed class PdfPage : IDisposable
         var pixelWidth = Math.Max(1, (int)Math.Round(widthInPoints * dpi / 72.0));
         var pixelHeight = Math.Max(1, (int)Math.Round(heightInPoints * dpi / 72.0));
 
+        // BitmapSource DPI metadata controls how WPF sizes the bitmap in DIPs.
+        // Default is the render DPI (bitmap natural size = points × 96/72 DIPs,
+        // i.e. 100% size). Callers that already inflate `dpi` by a viewer zoom
+        // factor or by a display scale pass a *lower* density here so WPF
+        // displays the bitmap at the intended DIP size without stretching.
+        var densityDpi = bitmapDensityDpi ?? dpi;
+
+        // FPDF_ANNOT (0x01) always. FPDF_LCD_TEXT (0x02) enables horizontal
+        // subpixel anti-aliasing tuned for LCD displays — noticeably sharper
+        // for on-screen text; skip it for print (no subpixel structure).
+        var flags = 1;
+        if (useLcdText) flags |= 2;
+
         lock (PdfNative.SyncRoot)
         {
             var bitmap = fpdfview.FPDFBitmapCreateEx(pixelWidth, pixelHeight, 4, IntPtr.Zero, 0);
@@ -112,8 +129,7 @@ public sealed class PdfPage : IDisposable
             try
             {
                 fpdfview.FPDFBitmapFillRect(bitmap, 0, 0, pixelWidth, pixelHeight, 0xFFFFFFFFUL);
-                // flags=1 → FPDF_ANNOT: paint annotations (highlights, free-text, sticky notes…) into the bitmap
-                fpdfview.FPDF_RenderPageBitmap(bitmap, _handle, 0, 0, pixelWidth, pixelHeight, rotation, 1);
+                fpdfview.FPDF_RenderPageBitmap(bitmap, _handle, 0, 0, pixelWidth, pixelHeight, rotation, flags);
 
                 var buffer = fpdfview.FPDFBitmapGetBuffer(bitmap);
                 var stride = fpdfview.FPDFBitmapGetStride(bitmap);
@@ -121,7 +137,7 @@ public sealed class PdfPage : IDisposable
 
                 var source = BitmapSource.Create(
                     pixelWidth, pixelHeight,
-                    dpi, dpi,
+                    densityDpi, densityDpi,
                     PixelFormats.Bgra32,
                     null,
                     buffer, bufferSize, stride);

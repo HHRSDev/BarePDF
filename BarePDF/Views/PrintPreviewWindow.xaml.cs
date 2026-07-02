@@ -135,7 +135,10 @@ public partial class PrintPreviewWindow : Wpf.Ui.Controls.FluentWindow
 
         var doc = _document;
         var token = _cts.Token;
-        var dpi = 96.0 * item.Scale;
+        var displayScale = VisualTreeHelper.GetDpi(this).DpiScaleX;
+        if (displayScale <= 0) displayScale = 1.0;
+        var dpi = 96.0 * item.Scale * displayScale;
+        var densityDpi = 96.0 * displayScale;
         var capturedScale = item.Scale;
 
         _ = Task.Run(() =>
@@ -144,7 +147,7 @@ public partial class PrintPreviewWindow : Wpf.Ui.Controls.FluentWindow
             {
                 token.ThrowIfCancellationRequested();
                 using var page = doc.GetPage(index);
-                var bmp = page.Render(dpi);
+                var bmp = page.Render(dpi, bitmapDensityDpi: densityDpi, useLcdText: true);
                 bmp.Freeze();
                 token.ThrowIfCancellationRequested();
 

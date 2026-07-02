@@ -1,0 +1,51 @@
+<ui:FluentWindow x:Class="BarePDF.Views.ErrorDetailsDialog"
+                 xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                 xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+                 Title="Error"
+                 Icon="/Resources/BarePDF.ico"
+                 Width="720" Height="480"
+                 WindowStartupLocation="CenterOwner"
+                 WindowBackdropType="Mica"
+                 ExtendsContentIntoTitleBar="True"
+                 WindowCornerPreference="Round">
+    <DockPanel>
+        <ui:TitleBar DockPanel.Dock="Top"
+                     Title="{Binding Title, RelativeSource={RelativeSource AncestorType=Window}}">
+            <ui:TitleBar.Icon>
+                <ui:ImageIcon Source="/Resources/BarePDF.ico"/>
+            </ui:TitleBar.Icon>
+        </ui:TitleBar>
+
+        <Border DockPanel.Dock="Bottom"
+                BorderThickness="0,1,0,0"
+                BorderBrush="{DynamicResource ControlElevationBorderBrush}"
+                Padding="16,12">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <ui:Button Content="Copy" Width="96" Margin="0,0,8,0"
+                           Click="OnCopyClick"/>
+                <ui:Button Content="Close" Width="96" Margin="0,0,0,0"
+                           Appearance="Primary" IsDefault="True" IsCancel="True"
+                           Click="OnCloseClick"/>
+            </StackPanel>
+        </Border>
+
+        <StackPanel Margin="24,8,24,8" DockPanel.Dock="Top">
+            <TextBlock x:Name="HeadlineText"
+                       FontSize="16" FontWeight="SemiBold"
+                       Margin="0,0,0,4"
+                       TextWrapping="Wrap"/>
+        </StackPanel>
+
+        <TextBox x:Name="DetailsBox"
+                 Margin="24,0,24,16"
+                 IsReadOnly="True"
+                 AcceptsReturn="True"
+                 VerticalScrollBarVisibility="Auto"
+                 HorizontalScrollBarVisibility="Auto"
+                 TextWrapping="NoWrap"
+                 FontFamily="Consolas, Cascadia Mono"
+                 FontSize="12"
+                 Background="{DynamicResource ControlFillColorDefaultBrush}"/>
+    </DockPanel>
+</ui:FluentWindow>

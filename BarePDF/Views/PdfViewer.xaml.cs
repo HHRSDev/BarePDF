@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 using System.Windows.Threading;
 using BarePDF.Pdfium;
 using BarePDF.Settings;
@@ -1131,7 +1132,13 @@ public partial class PdfViewer : UserControl
 
         var doc = _document;
         var token = _renderCts?.Token ?? CancellationToken.None;
-        var dpi = 96.0 * _zoomScale;
+        // Multiply by the display's device-pixel scale so the rendered bitmap
+        // has one pixel per physical screen pixel — otherwise WPF's bilinear
+        // upscale to physical pixels softens text on 125/150/200% displays.
+        var displayScale = VisualTreeHelper.GetDpi(this).DpiScaleX;
+        if (displayScale <= 0) displayScale = 1.0;
+        var dpi = 96.0 * _zoomScale * displayScale;
+        var densityDpi = 96.0 * displayScale;
         var capturedScale = _zoomScale;
         var capturedRotation = _rotation;
 
@@ -1142,7 +1149,7 @@ public partial class PdfViewer : UserControl
                 if (token.IsCancellationRequested) return;
                 using var page = doc.GetPage(index);
                 if (token.IsCancellationRequested) return;
-                var bitmap = page.Render(dpi, capturedRotation);
+                var bitmap = page.Render(dpi, capturedRotation, densityDpi, useLcdText: true);
                 Dispatcher.InvokeAsync(() =>
                 {
                     _renderingPages.Remove(index);
